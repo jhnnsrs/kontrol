@@ -9,7 +9,7 @@ export type ClientType = typeof Client[keyof typeof Client]
 
 export const settings = {
   client: Client.BROWSER as ClientType,
-  baseUrl: `http://jhnnsrs-lab/lok/_allauth/${Client.BROWSER}/v1`,
+  baseUrl: `/lok/_allauth/${Client.BROWSER}/v1`,
   withCredentials: false
 }
 

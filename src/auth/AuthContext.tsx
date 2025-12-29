@@ -1,7 +1,36 @@
-import { useEffect, createContext, useState } from 'react'
+import { useEffect, createContext, useState, type ReactNode } from 'react'
 import { getAuth, getConfig } from '../lib/allauth'
 
-export const AuthContext = createContext(null)
+export interface AuthConfig {
+  status: number
+  data: {
+    account: {
+      authentication_method: string
+    }
+    socialaccount: {
+      providers: Array<{
+        id: string
+        name: string
+        flows: string[]
+        client_id: string
+        openid_configuration_url?: string
+      }>
+    }
+    mfa: {
+      supported_types: string[]
+    }
+    usersessions: {
+      track_activity: boolean
+    }
+  }
+}
+
+export interface AuthContextType {
+  auth: any
+  config?: AuthConfig
+}
+
+export const AuthContext = createContext<AuthContextType | null>(null)
 
 function Loading () {
   return <div>Starting...</div>
@@ -11,19 +40,20 @@ function LoadingError () {
   return <div>Loading error!</div>
 }
 
-export function AuthContextProvider (props) {
-  const [auth, setAuth] = useState(undefined)
-  const [config, setConfig] = useState(undefined)
+export function AuthContextProvider (props: { children: ReactNode }) {
+  const [auth, setAuth] = useState<any>(undefined)
+  const [config, setConfig] = useState<AuthConfig | undefined>(undefined)
 
   useEffect(() => {
-    function onAuthChanged (e) {
-      setAuth(auth => {
+    function onAuthChanged (e: Event) {
+      const customEvent = e as CustomEvent
+      setAuth((auth: any) => {
         if (typeof auth === 'undefined') {
           console.log('Authentication status loaded')
         } else {
           console.log('Authentication status updated')
         }
-        return e.detail
+        return customEvent.detail
       }
       )
     }
@@ -33,7 +63,7 @@ export function AuthContextProvider (props) {
       console.error(e)
       setAuth(false)
     })
-    getConfig().then(data => setConfig(data)).catch((e) => {
+    getConfig().then(data => setConfig(data as unknown as AuthConfig)).catch((e) => {
       console.error(e)
     })
     return () => {

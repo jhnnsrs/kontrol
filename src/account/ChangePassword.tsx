@@ -1,56 +1,155 @@
 import { useState } from 'react'
-import FormErrors from '../components/FormErrors'
 import { changePassword } from '../lib/allauth'
 import { Navigate } from 'react-router-dom'
 import { useUser } from '../auth'
-import Button from '../components/Button'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import * as constants from '../constants'
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
-export default function ChangePassword () {
-  const hasCurrentPassword = useUser().has_usable_password
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [newPassword2, setNewPassword2] = useState('')
-  const [newPassword2Errors, setNewPassword2Errors] = useState([])
+const changePasswordSchema = z.object({
+  current_password: z.string().optional(),
+  new_password: z.string().min(1, "Password is required"),
+  new_password2: z.string().min(1, "Password confirmation is required"),
+}).refine((data) => data.new_password === data.new_password2, {
+  message: "Passwords do not match",
+  path: ["new_password2"],
+});
 
-  const [response, setResponse] = useState({ fetching: false, content: null })
+export default function ChangePassword() {
+  const user = useUser()
+  const hasCurrentPassword = user.has_usable_password
+  const [success, setSuccess] = useState(false)
+  const [globalError, setGlobalError] = useState<string | null>(null)
 
-  function submit () {
-    if (newPassword !== newPassword2) {
-      setNewPassword2Errors([{ param: 'new_password2', message: 'Password does not match.' }])
+  const form = useForm<z.infer<typeof changePasswordSchema>>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      current_password: "",
+      new_password: "",
+      new_password2: "",
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof changePasswordSchema>) {
+    setGlobalError(null)
+    if (hasCurrentPassword && !values.current_password) {
+      form.setError("current_password", { message: "Current password is required" })
       return
     }
-    setNewPassword2Errors([])
-    setResponse({ ...response, fetching: true })
-    changePassword({ current_password: currentPassword, new_password: newPassword }).then((resp) => {
-      setResponse((r) => { return { ...r, content: resp } })
+
+    changePassword({
+      current_password: values.current_password,
+      new_password: values.new_password
+    }).then((resp) => {
+      if (resp.status === 200) {
+        setSuccess(true)
+      } else if (resp.status === 400) {
+        // Handle field errors
+        if (resp.data?.errors) {
+            Object.entries(resp.data.errors).forEach(([key, value]) => {
+                if (key === 'current_password' || key === 'new_password') {
+                     form.setError(key, { message: Array.isArray(value) ? value.join(" ") : String(value) })
+                } else {
+                    setGlobalError(Array.isArray(value) ? value.join(" ") : String(value))
+                }
+            })
+        }
+      } else {
+          setGlobalError("An error occurred. Please try again.")
+      }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setGlobalError("An unexpected error occurred.")
     })
   }
-  if (response.content?.status === 200) {
-    return <Navigate to='/calculator' />
+
+  if (success) {
+    return <Navigate to={constants.HOME_URL} />
   }
+
   return (
-    <div>
-      <h1>{hasCurrentPassword ? 'Change Password' : 'Set Password'}</h1>
-
-      <p>{hasCurrentPassword ? 'Enter your current password, followed by your new password.' : 'You currently have no password set. Enter your (new) password.'}</p>
-      {hasCurrentPassword
-        ? <div><label>Current password: <input autoComplete='password' value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type='password' required /></label>
-          <FormErrors param='current_password' errors={response.content?.errors} />
-          </div>
-        : null}
-      <div><label>Password: <input autoComplete='new-password' value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type='password' required /></label>
-        <FormErrors param='new_password' errors={response.content?.errors} />
-      </div>
-      <div><label>Password (again): <input value={newPassword2} onChange={(e) => setNewPassword2(e.target.value)} type='password' required /></label>
-        <FormErrors param='new_password2' errors={newPassword2Errors} />
-      </div>
-
-      <Button disabled={response.fetching} onClick={() => submit()}>{hasCurrentPassword ? 'Change' : 'Set'}</Button>
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>{hasCurrentPassword ? 'Change Password' : 'Set Password'}</CardTitle>
+          <CardDescription>
+            {hasCurrentPassword
+              ? 'Enter your current password, followed by your new password.'
+              : 'You currently have no password set. Enter your (new) password.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {globalError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{globalError}</AlertDescription>
+            </Alert>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {hasCurrentPassword && (
+                <FormField
+                  control={form.control}
+                  name="current_password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} autoComplete="current-password" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <FormField
+                control={form.control}
+                name="new_password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="new_password2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {hasCurrentPassword ? 'Change Password' : 'Set Password'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { confirmLoginCode, Flows } from '../lib/allauth'
+import os
+
+content = r"""import { useState } from 'react'
+import { verifyEmail } from '../lib/allauth'
 import { Navigate, Link } from 'react-router-dom'
-import { useAuthStatus } from '../auth'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,9 +17,9 @@ const formSchema = z.object({
   code: z.string().min(1, "Code is required"),
 })
 
-export const ConfirmLoginCodeForm = () => {
-  const [, authInfo] = useAuthStatus()
+export const VerifyEmailByCodeForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -29,19 +30,19 @@ export const ConfirmLoginCodeForm = () => {
 
   function onSubmit (data: z.infer<typeof formSchema>) {
     setGlobalError(null)
-    confirmLoginCode(data.code).then((content) => {
-      if (content.status === 200) {
-        window.location.href = "/"
+    verifyEmail(data.code).then((content) => {
+      if ([200, 401].includes(content.status)) {
+        setSuccess(true)
       } else {
         if (content.errors) {
-             if (content.errors.code) {
-                 form.setError("code", { message: content.errors.code.join(" ") })
+             if (content.errors.key) {
+                 form.setError("code", { message: content.errors.key.join(" ") })
              }
              if (content.errors.non_field_errors) {
                  setGlobalError(content.errors.non_field_errors.join(" "))
              }
-             if (!content.errors.code && !content.errors.non_field_errors) {
-                 setGlobalError("Confirmation failed.")
+             if (!content.errors.key && !content.errors.non_field_errors) {
+                 setGlobalError("Verification failed.")
              }
         } else {
             setGlobalError("An error occurred.")
@@ -53,16 +54,16 @@ export const ConfirmLoginCodeForm = () => {
     })
   }
 
-  if (authInfo.pendingFlow?.id !== Flows.LOGIN_BY_CODE) {
-    return <Navigate to='/account/login/code' />
+  if (success) {
+    return <Navigate to='/account/email' />
   }
 
   return (
     <div className={cn("flex flex-col gap-6")}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Enter Sign-In Code</h1>
+        <h1 className="text-2xl font-bold">Confirm Email Address</h1>
         <p className="text-muted-foreground text-sm text-balance">
-          The code expires shortly, so please enter it soon.
+          Enter the code you received to confirm your email address.
         </p>
       </div>
       
@@ -91,7 +92,7 @@ export const ConfirmLoginCodeForm = () => {
               )}
             />
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              Sign In
+              Confirm
             </Button>
           </div>
         </form>
@@ -105,7 +106,7 @@ export const ConfirmLoginCodeForm = () => {
   )
 }
 
-export default function ConfirmLoginCode () {
+export default function VerifyEmailByCode () {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -119,7 +120,7 @@ export default function ConfirmLoginCode () {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <ConfirmLoginCodeForm />
+            <VerifyEmailByCodeForm />
           </div>
         </div>
       </div>
@@ -133,3 +134,10 @@ export default function ConfirmLoginCode () {
     </div>
   )
 }
+"""
+
+with open(
+    "/home/jhnnsrs/Code/deployments/next/mounts/kontrol/src/account/VerifyEmailByCode.tsx",
+    "w",
+) as f:
+    f.write(content)

@@ -23,34 +23,6 @@ export default function Calculator () {
   const [drfResponse, setDRFResponse] = useState({ status: '', data: '' })
   const [ninjaResponse, setNinjaResponse] = useState({ status: '', data: '' })
 
-  const fetchResult = useCallback(async (url, x, y, setResponse) => {
-    const params = { x, y }
-    const query = new URLSearchParams(params)
-    const sessionToken = getSessionToken()
-    const options = { headers: {} }
-    if (settings.client === Client.APP && sessionToken) {
-      options.headers['X-Session-Token'] = sessionToken
-    }
-    if (settings.withCredentials) {
-      options.credentials = 'include'
-    }
-    const response = await window.fetch(`${url}?${query.toString()}`, options)
-
-    const data = await response.json()
-    setResponse({ status: response.status, data })
-  }, [])
-
-  const onCalculate = useCallback((e) => {
-    e.preventDefault()
-    let baseUrl = ''
-    try {
-      baseUrl = new URL(settings.baseUrl).origin
-    } catch {}
-    fetchResult(baseUrl + '/drf/api/add/', x, y, setDRFResponse)
-    fetchResult(baseUrl + '/ninja/api/add', x, y, setNinjaResponse)
-    return false
-  }, [x, y, setNinjaResponse, setDRFResponse])
-
   return (
     <div>
       <h2>Calculator</h2>
@@ -64,7 +36,6 @@ export default function Calculator () {
             <label>𝓎</label>
             <input className='form-control' value={y} onChange={(e) => setY(e.target.value)} type='number' />
           </div>
-          <button onClick={onCalculate} className='btn btn-primary'>Add these inputs</button>
         </fieldset>
 
         <div className='row'>

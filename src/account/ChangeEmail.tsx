@@ -1,92 +1,133 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import * as allauth from '../lib/allauth'
-import FormErrors from '../components/FormErrors'
-import Button from '../components/Button'
 import { useConfig } from '../auth/hooks'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, Trash2, Send, CheckCircle2, XCircle } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-export default function ChangeEmail () {
+const addEmailSchema = z.object({
+  email: z.string().email("Invalid email address"),
+})
+
+export default function ChangeEmail() {
   const config = useConfig()
-  const [email, setEmail] = useState('')
   const [redirectToVerification, setRedirectToVerification] = useState(false)
-  const [emailAddresses, setEmailAddresses] = useState([])
-  const [response, setResponse] = useState({ fetching: false, content: { status: 200, data: [] } })
+  const [emailAddresses, setEmailAddresses] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null) // email -> action
+  const [globalError, setGlobalError] = useState<string | null>(null)
+
+  const form = useForm<z.infer<typeof addEmailSchema>>({
+    resolver: zodResolver(addEmailSchema),
+    defaultValues: {
+      email: "",
+    },
+  })
 
   useEffect(() => {
-    setResponse((r) => { return { ...r, fetching: true } })
+    setLoading(true)
     allauth.getEmailAddresses().then((resp) => {
       if (resp.status === 200) {
         setEmailAddresses(resp.data)
       }
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+    }).finally(() => {
+      setLoading(false)
     })
   }, [])
 
-  function requestRedirectToVerification () {
-    if (config.data.account.email_verification_by_code_enabled) {
+  function requestRedirectToVerification() {
+    if (config?.data?.account?.email_verification_by_code_enabled) {
       setRedirectToVerification(true)
     }
   }
 
-  function addEmail () {
-    setResponse({ ...response, fetching: true })
-    allauth.addEmail(email).then((resp) => {
-      setResponse((r) => { return { ...r, content: resp } })
+  function onAddEmail(values: z.infer<typeof addEmailSchema>) {
+    setGlobalError(null)
+    setActionLoading("add")
+    allauth.addEmail(values.email).then((resp) => {
       if (resp.status === 200) {
         setEmailAddresses(resp.data)
-        setEmail('')
+        form.reset()
         requestRedirectToVerification()
+      } else {
+         if (resp.data?.errors?.email) {
+             form.setError("email", { message: resp.data.errors.email.join(" ") })
+         } else {
+             setGlobalError("Failed to add email.")
+         }
       }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setGlobalError("An unexpected error occurred.")
+    }).finally(() => {
+      setActionLoading(null)
     })
   }
 
-  function requestEmailVerification (email) {
-    setResponse({ ...response, fetching: true })
+  function requestEmailVerification(email: string) {
+    setActionLoading(`verify-${email}`)
     allauth.requestEmailVerification(email).then((resp) => {
       if (resp.status === 200) {
         requestRedirectToVerification()
+        // Optionally show a success message
       }
     }).catch((e) => {
       console.error(e)
       window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+    }).finally(() => {
+      setActionLoading(null)
     })
   }
 
-  function deleteEmail (email) {
-    setResponse({ ...response, fetching: true })
+  function deleteEmail(email: string) {
+    if (!window.confirm(`Are you sure you want to remove ${email}?`)) return
+    setActionLoading(`delete-${email}`)
     allauth.deleteEmail(email).then((resp) => {
-      setResponse((r) => { return { ...r, content: resp } })
       if (resp.status === 200) {
         setEmailAddresses(resp.data)
       }
     }).catch((e) => {
       console.error(e)
       window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+    }).finally(() => {
+      setActionLoading(null)
     })
   }
 
-  function markAsPrimary (email) {
-    setResponse({ ...response, fetching: true })
+  function markAsPrimary(email: string) {
+    setActionLoading(`primary-${email}`)
     allauth.markEmailAsPrimary(email).then((resp) => {
-      setResponse((r) => { return { ...r, content: resp } })
       if (resp.status === 200) {
         setEmailAddresses(resp.data)
       }
     }).catch((e) => {
       console.error(e)
       window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+    }).finally(() => {
+      setActionLoading(null)
     })
   }
 
@@ -95,49 +136,120 @@ export default function ChangeEmail () {
   }
 
   return (
-    <div>
-      <h1>Change Email</h1>
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Addresses</CardTitle>
+          <CardDescription>Manage your email addresses associated with this account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emailAddresses.map((ea) => (
+                  <TableRow key={ea.email}>
+                    <TableCell className="font-medium">
+                      {ea.email}
+                      {ea.primary && <Badge variant="secondary" className="ml-2">Primary</Badge>}
+                    </TableCell>
+                    <TableCell>
+                      {ea.verified ? (
+                        <div className="flex items-center text-green-600 gap-1">
+                          <CheckCircle2 className="h-4 w-4" /> Verified
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-yellow-600 gap-1">
+                          <XCircle className="h-4 w-4" /> Unverified
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {!ea.verified && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => requestEmailVerification(ea.email)}
+                          disabled={!!actionLoading}
+                        >
+                          {actionLoading === `verify-${ea.email}` ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                        </Button>
+                      )}
+                      {!ea.primary && ea.verified && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => markAsPrimary(ea.email)}
+                          disabled={!!actionLoading}
+                        >
+                           {actionLoading === `primary-${ea.email}` ? <Loader2 className="h-4 w-4 animate-spin" /> : "Make Primary"}
+                        </Button>
+                      )}
+                      {!ea.primary && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteEmail(ea.email)}
+                          disabled={!!actionLoading}
+                        >
+                           {actionLoading === `delete-${ea.email}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Verified</th>
-            <th>Primary</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {emailAddresses.map(ea => {
-            return (
-              <tr key={ea.email}>
-                <td>{ea.email}</td>
-                <td>{ea.verified
-                  ? '✅'
-                  : '❌'}
-                </td>
-                <td>
-                  <input onChange={() => markAsPrimary(ea.email)} type='radio' checked={ea.primary} />
-                </td>
-                <td>
-                  {ea.verified ? '' : <Button onClick={() => requestEmailVerification(ea.email)} disabled={response.fetching}>Resend</Button>}
-                  {ea.primary ? '' : <Button onClick={() => deleteEmail(ea.email)} disabled={response.fetching}>Remove</Button>}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-
-      <h2>Add Email</h2>
-
-      <FormErrors errors={response.content.errors} />
-
-      <div><label>Email <input value={email} onChange={(e) => setEmail(e.target.value)} type='email' required /></label>
-        <FormErrors param='email' errors={response.content?.errors} />
-      </div>
-      <Button disabled={response.fetching} onClick={() => addEmail()}>Add</Button>
-
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Email Address</CardTitle>
+          <CardDescription>Add a new email address to your account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {globalError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{globalError}</AlertDescription>
+            </Alert>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onAddEmail)} className="flex gap-4 items-end">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={!!actionLoading}>
+                {actionLoading === 'add' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Add Email
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

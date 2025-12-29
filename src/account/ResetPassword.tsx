@@ -1,74 +1,163 @@
 import { useState } from 'react'
-import FormErrors from '../components/FormErrors'
 import { getPasswordReset, resetPassword } from '../lib/allauth'
 import { Navigate, Link, useLocation, useLoaderData } from 'react-router-dom'
-import Button from '../components/Button'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
-export async function resetPasswordByLinkLoader ({ params }) {
+export async function resetPasswordByLinkLoader ({ params }: any) {
   const key = params.key
   const resp = await getPasswordReset(key)
   return { resetKey: key, resetKeyResponse: resp }
 }
 
-function ResetPassword ({ resetKey, resetKeyResponse }) {
-  const [password1, setPassword1] = useState('')
-  const [password2, setPassword2] = useState('')
-  const [password2Errors, setPassword2Errors] = useState([])
+const resetPasswordSchema = z.object({
+  password: z.string().min(1, "Password is required"),
+  passwordConfirm: z.string().min(1, "Password confirmation is required"),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords do not match",
+  path: ["passwordConfirm"],
+});
 
-  const [response, setResponse] = useState({ fetching: false, content: null })
+function ResetPassword ({ resetKey, resetKeyResponse }: { resetKey: string, resetKeyResponse: any }) {
+  const [success, setSuccess] = useState(false)
+  const [globalError, setGlobalError] = useState<string | null>(null)
 
-  function submit () {
-    if (password2 !== password1) {
-      setPassword2Errors([{ param: 'password2', message: 'Password does not match.' }])
-      return
-    }
-    setPassword2Errors([])
-    setResponse({ ...response, fetching: true })
-    resetPassword({ key: resetKey, password: password1 }).then((resp) => {
-      setResponse((r) => { return { ...r, content: resp } })
+  const form = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      passwordConfirm: "",
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof resetPasswordSchema>) {
+    setGlobalError(null)
+    resetPassword({ key: resetKey, password: values.password }).then((resp) => {
+      if (resp.status === 200) {
+        setSuccess(true)
+      } else if (resp.status === 401) {
+          // Should not happen if key was valid, but maybe expired during fill
+          setSuccess(true) // Treat as success to redirect to login? Or show error?
+          // Original code redirected on 401 too.
+      } else {
+          if (resp.data?.errors?.password) {
+              form.setError("password", { message: resp.data.errors.password.join(" ") })
+          } else if (resp.data?.errors?.key) {
+              setGlobalError("Invalid or expired reset key.")
+          } else {
+              setGlobalError("An error occurred.")
+          }
+      }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setGlobalError("An unexpected error occurred.")
     })
   }
-  if ([200, 401].includes(response.content?.status)) {
+
+  if (success) {
     return <Navigate to='/account/login' />
   }
-  let body
-  if (resetKeyResponse.status !== 200) {
-    body = <FormErrors param='key' errors={resetKeyResponse.errors} />
-  } else if (response.content?.errors?.filter(e => e.param === 'key')) {
-    body = <FormErrors param='key' errors={response.content?.errors} />
-  } else {
-    body = (
-      <>
-        <div><label>Password: <input autoComplete='new-password' value={password1} onChange={(e) => setPassword1(e.target.value)} type='password' required /></label>
-          <FormErrors param='password' errors={response.content?.errors} />
-        </div>
-        <div><label>Password (again): <input value={password2} onChange={(e) => setPassword2(e.target.value)} type='password' required /></label>
-          <FormErrors param='password2' errors={password2Errors} />
-        </div>
 
-        <Button disabled={response.fetching} onClick={() => submit()}>Reset</Button>
-      </>
-    )
+  if (resetKeyResponse.status !== 200) {
+      return (
+        <div className="flex justify-center items-center min-h-[50vh]">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Reset Password</CardTitle>
+                    <CardDescription>Invalid Request</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {resetKeyResponse.data?.errors?.key?.join(" ") || "The password reset link is invalid or has expired."}
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                    <Link to="/account/password/reset" className="text-sm underline">Request a new password reset</Link>
+                </CardFooter>
+            </Card>
+        </div>
+      )
   }
 
   return (
-    <div>
-      <h1>Reset Password</h1>
-      <p>
-        Remember your password? <Link to='/account/login'>Back to login.</Link>
-      </p>
-      {body}
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Reset Password</CardTitle>
+          <CardDescription>Enter your new password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {globalError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{globalError}</AlertDescription>
+            </Alert>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="passwordConfirm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                Reset Password
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+                Remember your password? <Link to='/account/login' className="underline text-primary">Back to login.</Link>
+            </p>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
 
 export function ResetPasswordByLink () {
-  const { resetKey, resetKeyResponse } = useLoaderData()
+  const { resetKey, resetKeyResponse } = useLoaderData() as any
   return <ResetPassword resetKey={resetKey} resetKeyResponse={resetKeyResponse} />
 }
 

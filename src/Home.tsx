@@ -1,47 +1,192 @@
-function Service (props) {
+import { GalleryVerticalEnd } from "lucide-react"
+import { Link, useLocation } from "react-router-dom"
+
+import { useUser, useConfig } from './auth'
+
+
+import * as React from "react"
+
+import { useIsMobile } from "@/hooks/use-mobile"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
+
+
+
+function NavBarItem (props: { to: string, icon: React.ReactNode, name: string }) {
+  const location = useLocation()
+  const isActive = (props.to && location.pathname.startsWith(props.to))
+  const cls = isActive ? 'text-slate-800' : 'text-slate-800 hover:text-slate-600'
   return (
-    <div className='col'>
-      <img className='img-fluid' src={props.img} />
-      <h3>{props.title}</h3>
-      <a href={props.link}>{props.linkBody}</a>
-    </div>
+    <Link className={cls} to={props.to}>{props.icon} {props.name}</Link>
+    
   )
 }
 
-function Channel (props) {
+export  function NavBar () {
+  const user = useUser()
+  const config = useConfig()
+  const anonNav = (
+    <>
+      <NavBarItem to='/account/login' icon='🔑' name='Login' />
+      <NavBarItem to='/account/signup' icon='🧑' name='Signup' />
+      <NavBarItem to='/account/password/reset' icon='🔓' name='Reset password' />
+    </>
+  )
+  const authNav = (
+    <>
+      <NavBarItem to='/account/email' icon='📬' name='Change Email' />
+      <NavBarItem to='/account/password/change' icon='🔒' name='Change Password' />
+      {config?.data.socialaccount
+        ? <NavBarItem to='/account/providers' icon='👤' name='Providers' />
+        : null}
+      {config?.data.mfa
+        ? <NavBarItem to='/account/2fa' icon='📱' name='Two-Factor Authentication' />
+        : null}
+
+      {config?.data.usersessions
+        ? <NavBarItem to='/account/sessions' icon='🚀' name='Sessions' />
+        : null}
+      <NavBarItem to='/account/logout' icon='👋' name='Logout' />
+    </>
+  )
   return (
-    <div className='col'>
-      <hr className={`aa-channel ${props.rev ? 'aa-channel-rev' : ''}`} />
-      <div className='d-none d-lg-block' style={{ fontVariant: 'small-caps' }}>◀ {props.emoji} <span className=''>{props.title}</span> ▶</div>
-    </div>
+      <div className='container-fluid'>
+        <Link to='/' className='navbar-brand'>React ❤️ django-allauth</Link>
+        <button className='navbar-toggler' type='button' data-bs-toggle='collapse' data-bs-target='#navbarCollapse' aria-controls='navbarCollapse' aria-expanded='false' aria-label='Toggle navigation'>
+          <span className='navbar-toggler-icon' />
+        </button>
+        <div className='collapse navbar-collapse' id='navbarCollapse'>
+          <ul className='navbar-nav me-auto mb-2 mb-md-0'>
+            <NavBarItem to='/calculator' icon='📈' name='Calculator' />
+            {user ? authNav : anonNav}
+          </ul>
+        </div>
+      </div>
   )
 }
+
+
+export function NavigationMenuDemo() {
+  const isMobile = useIsMobile()
+  const user = useUser()
+  const config = useConfig()
+
+  return (
+    <NavigationMenu viewport={isMobile}>
+      <NavigationMenuList className="flex-wrap">
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+            <Link to="/">Home</Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+            <Link to="/calculator">Calculator</Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        {user ? (
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>Account</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px]">
+                <ListItem to='/account/email' title='Change Email'>
+                  Manage your email addresses
+                </ListItem>
+                <ListItem to='/account/password/change' title='Change Password'>
+                  Update your password
+                </ListItem>
+                {config?.data.socialaccount && (
+                  <ListItem to='/account/providers' title='Providers'>
+                    Manage third-party login providers
+                  </ListItem>
+                )}
+                {config?.data.mfa && (
+                  <ListItem to='/account/2fa' title='Two-Factor Authentication'>
+                    Secure your account
+                  </ListItem>
+                )}
+                {config?.data.usersessions && (
+                  <ListItem to='/account/sessions' title='Sessions'>
+                    Manage active sessions
+                  </ListItem>
+                )}
+                <ListItem to='/account/logout' title='Logout'>
+                  Sign out of your account
+                </ListItem>
+              </ul>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        ) : (
+          <>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <Link to="/account/login">Login</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                <Link to="/account/signup">Signup</Link>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          </>
+        )}
+      </NavigationMenuList>
+    </NavigationMenu>
+  )
+}
+
+function ListItem({
+  title,
+  children,
+  to,
+  ...props
+}: React.ComponentPropsWithoutRef<"li"> & { to: string }) {
+  return (
+    <li {...props}>
+      <NavigationMenuLink asChild>
+        <Link to={to}>
+          <div className="text-sm leading-none font-medium">{title}</div>
+          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
+            {children}
+          </p>
+        </Link>
+      </NavigationMenuLink>
+    </li>
+  )
+}
+
 
 export default function Home () {
   return (
-    <div>
-      <div className='container p-4 my-4 rounded-4 bg-light text-center'>
-        <div className='d-flex flex-1 flex-column flex-sm-row align-items-sm-center'>
+    <>
+<NavigationMenuDemo />
+    <NavBar />
+    <div className="grid min-h-svh lg:grid-cols-2">
 
-          <Service img='/img/app.svg' title='Mobile / SPA' link='https://app.react.demo.allauth.org' linkBody={<>app.<i>{'{project.org}'}</i></>} />
-          <Channel emoji='🔑' title='tokens' />
-          <Service img='/img/allauth.svg' title='Headless' link='https://api.react.demo.allauth.org/_allauth/openapi.html' linkBody={<>api.<i>{'{project.org}'}</i></>} />
-          <Channel rev emoji='🍪' title='cookies' />
-          <Service img='/img/react.svg' title='Single-Page application' link='https://react.demo.allauth.org' linkBody={<i>{'{project.org}'}</i>} />
-
+      <Link to="/account/login" className="flex flex-col ">
+        <div className="flex justify-center gap-2 md:justify-start">
+            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            Acme Inc.
         </div>
-      </div>
-
-      <h1>Welcome!</h1>
-
-      <p>Welcome to the headless django-allauth demo. It demonstrates:</p>
-      <ul>
-        <li>A <strong>React</strong> <a target='_blank' href='https://codeberg.org/allauth/django-allauth/src/branch/main/examples/react-spa/frontend' rel='noreferrer'>frontend app</a> interfacing with <code>allauth.headless</code>.</li>
-        <li>The use of <strong>session cookies</strong>, as well as <strong>API tokens</strong>.</li>
-        <li>A <a href='/calculator'>calculator</a>, allowing <i>authenticated</i> users to add up two numbers, built using an API backed by two implementations: Django REST framework, and Ninja.
-        </li>
-        <li>The use of headless <strong>tokens</strong> in frameworks such as Django REST framework and Ninja.</li>
-      </ul>
+      </Link>
+      <Link to="/account/logout" className="flex flex-col ">
+        <div className="flex justify-center gap-2 md:justify-start">
+            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
+              <GalleryVerticalEnd className="size-4" />
+            </div>
+            Acme Inc.
+        </div>
+      </Link>
     </div>
+    </>
   )
 }

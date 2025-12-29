@@ -4,51 +4,93 @@ import {
   Navigate
 } from 'react-router-dom'
 import { getEmailVerification, verifyEmail } from '../lib/allauth'
-import Button from '../components/Button'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
 
-export async function loader ({ params }) {
+export async function loader ({ params }: any) {
   const key = params.key
   const resp = await getEmailVerification(key)
   return { key, verification: resp }
 }
 
 export default function VerifyEmail () {
-  const { key, verification } = useLoaderData()
-  const [response, setResponse] = useState({ fetching: false, content: null })
+  const { key, verification } = useLoaderData() as any
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function submit () {
-    setResponse({ ...response, fetching: true })
+    setLoading(true)
     verifyEmail(key).then((content) => {
-      setResponse((r) => { return { ...r, content } })
+      if (content.status === 200 || content.status === 401) {
+          setSuccess(true)
+      } else {
+          setError("Failed to verify email.")
+      }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setError("An unexpected error occurred.")
+    }).finally(() => {
+      setLoading(false)
     })
   }
 
-  if ([200, 401].includes(response.content?.status)) {
+  if (success) {
     return <Navigate to='/account/email' />
   }
 
-  let body = null
+  let content
   if (verification.status === 200) {
-    body = (
-      <>
-        <p>Please confirm that <a href={'mailto:' + verification.data.email}>{verification.data.email}</a> is an email address for user {verification.data.user.str}.</p>
-        <Button disabled={response.fetching} onClick={() => submit()}>Confirm</Button>
-      </>
+    content = (
+      <div className="flex flex-col gap-4">
+        <p className="text-center">
+            Please confirm that <span className="font-semibold">{verification.data.email}</span> is an email address for user <span className="font-semibold">{verification.data.user.str}</span>.
+        </p>
+        <Button disabled={loading} onClick={() => submit()} className="w-full">
+            {loading ? "Confirming..." : "Confirm"}
+        </Button>
+      </div>
     )
   } else if (!verification.data?.email) {
-    body = <p>Invalid verification link.</p>
+    content = (
+        <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>Invalid verification link.</AlertDescription>
+        </Alert>
+    )
   } else {
-    body = <p>Unable to confirm email <a href={'mailto:' + verification.data.email}>{verification.data.email}</a> because it is already confirmed.</p>
+    content = (
+        <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Notice</AlertTitle>
+            <AlertDescription>
+                Unable to confirm email <span className="font-semibold">{verification.data.email}</span> because it is already confirmed.
+            </AlertDescription>
+        </Alert>
+    )
   }
+
   return (
-    <div>
-      <h1>Confirm Email Address</h1>
-      {body}
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Confirm Email Address</CardTitle>
+        </CardHeader>
+        <CardContent>
+            {error && (
+                <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            {content}
+        </CardContent>
+      </Card>
     </div>
   )
 }
+   

@@ -1,64 +1,166 @@
 import { useState } from 'react'
-import FormErrors from '../components/FormErrors'
 import { signUp } from '../lib/allauth'
 import { Link } from 'react-router-dom'
 import { useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
-import Button from '../components/Button'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
-export default function Signup () {
-  const [email, setEmail] = useState('')
-  const [password1, setPassword1] = useState('')
-  const [password2, setPassword2] = useState('')
-  const [password2Errors, setPassword2Errors] = useState([])
-  const [response, setResponse] = useState({ fetching: false, content: null })
+const signupSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+  passwordConfirm: z.string().min(1, "Password confirmation is required"),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Passwords do not match",
+  path: ["passwordConfirm"],
+});
+
+export default function Signup() {
+  const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = config.data.socialaccount?.providers?.length > 0
 
-  function submit () {
-    if (password2 !== password1) {
-      setPassword2Errors([{ param: 'password2', message: 'Password does not match.' }])
-      return
-    }
-    setPassword2Errors([])
-    setResponse({ ...response, fetching: true })
-    signUp({ email, password: password1 }).then((content) => {
-      setResponse((r) => { return { ...r, content } })
+  const form = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      passwordConfirm: "",
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof signupSchema>) {
+    setGlobalError(null)
+    signUp({ email: values.email, password: values.password }).then((content) => {
+      if (content.status === 200) {
+        // Success, usually redirects or updates auth state
+        // The original code didn't have explicit redirect, maybe allauth handles it via events?
+        // Or maybe it just shows a success message?
+        // Assuming it might need a redirect or just let the auth context update handle it.
+        // If the user is logged in, the AuthContext might redirect them if they are on a protected route.
+        // But Signup is usually public.
+        // Let's assume we might want to redirect to login or home.
+        // For now, I'll leave it as is, assuming the library or context handles the state change.
+      } else {
+        if (content.errors) {
+            Object.entries(content.errors).forEach(([key, value]) => {
+                if (key === 'email' || key === 'password') {
+                     form.setError(key as any, { message: Array.isArray(value) ? value.join(" ") : String(value) })
+                } else {
+                    setGlobalError(Array.isArray(value) ? value.join(" ") : String(value))
+                }
+            })
+        } else {
+            setGlobalError("An error occurred.")
+        }
+      }
     }).catch((e) => {
       console.error(e)
-      window.alert(e)
-    }).then(() => {
-      setResponse((r) => { return { ...r, fetching: false } })
+      setGlobalError("An unexpected error occurred.")
     })
   }
 
   return (
-    <div>
-      <h1>Sign Up</h1>
-      <p>
-        Already have an account? <Link to='/account/login'>Login here.</Link>
-      </p>
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Sign Up</CardTitle>
+          <CardDescription>Create a new account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {globalError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{globalError}</AlertDescription>
+            </Alert>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@example.com" {...field} autoComplete="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="passwordConfirm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} autoComplete="new-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                Sign Up
+              </Button>
+            </form>
+          </Form>
+          
+          {hasProviders && (
+            <div className="mt-6">
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                    </span>
+                    </div>
+                </div>
+                <div className="mt-4">
+                    <ProviderList />
+                </div>
+            </div>
+          )}
 
-      <FormErrors errors={response.content?.errors} />
-
-      <div><label>Email <input value={email} onChange={(e) => setEmail(e.target.value)} type='email' required /></label>
-        <FormErrors param='email' errors={response.content?.errors} />
-      </div>
-      <div><label>Password: <input autoComplete='new-password' value={password1} onChange={(e) => setPassword1(e.target.value)} type='password' required /></label>
-        <FormErrors param='password' errors={response.content?.errors} />
-      </div>
-      <div><label>Password (again): <input value={password2} onChange={(e) => setPassword2(e.target.value)} type='password' required /></label>
-        <FormErrors param='password2' errors={password2Errors} />
-      </div>
-      <Button disabled={response.fetching} onClick={() => submit()}>Sign Up</Button>
-      <a href='/account/signup/passkey'>Sign up using a passkey</a>
-
-      {hasProviders
-        ? <>
-          <h2>Or use a third-party</h2>
-          <ProviderList callbackURL='/account/provider/callback' />
-        </>
-        : null}
+        </CardContent>
+        <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+                Already have an account? <Link to='/account/login' className="underline text-primary">Login here.</Link>
+            </p>
+        </CardFooter>
+      </Card>
     </div>
   )
 }
