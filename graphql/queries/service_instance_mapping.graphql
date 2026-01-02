@@ -1,0 +1,14 @@
+query ListServiceInstanceMappings(
+  $pagination: OffsetPaginationInput
+  $filters: ServiceInstanceMappingFilter
+) {
+  serviceInstanceMappings(pagination: $pagination, filters: $filters) {
+    ...ListServiceInstanceMapping
+  }
+}
+
+query GetServiceInstanceMapping($id: ID!) {
+  serviceInstanceMapping(id: $id) {
+    ...ListServiceInstanceMapping
+  }
+}

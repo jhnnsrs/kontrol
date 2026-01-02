@@ -1,15 +1,33 @@
 fragment InstanceAlias on ManagementInstanceAlias {
+  id
   host
   port
   ssl
+  path
   challenge
   kind
+  layer {
+    id
+    name
+  }
+  instance {
+    id
+  }
 }
 
 fragment ListInstanceAlias on ManagementInstanceAlias {
+  id
   host
   port
   ssl
+  path
   challenge
   kind
+  layer {
+    id
+    name
+  }
+  instance {
+    id
+  }
 }

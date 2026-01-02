@@ -1,0 +1,14 @@
+query ListUsedAliases(
+  $pagination: OffsetPaginationInput
+  $filters: DeviceFilter
+) {
+  usedAliases(pagination: $pagination, filters: $filters) {
+    ...ListUsedAlias
+  }
+}
+
+query GetUsedAlias($id: ID!) {
+  usedAlias(id: $id) {
+    ...DetailUsedAlias
+  }
+}

@@ -1,0 +1,11 @@
+mutation CreateAlias($input: CreateAliasInput!) {
+  createAlias(input: $input) {
+    ...InstanceAlias
+  }
+}
+
+
+mutation DeleteAlias($input: DeleteAliasInput!) {
+  deleteAlias(input: $input) 
+    
+}

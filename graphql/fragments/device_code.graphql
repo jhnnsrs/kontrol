@@ -1,0 +1,24 @@
+fragment DeviceCode on ManagementDeviceCode {
+  id
+  code 
+  stagingKind
+  stagingManifest {
+    identifier 
+    version
+    logo
+    description
+    url
+  }
+  client {
+    id
+    kind
+    name
+    release {
+      version
+      scopes
+      app {
+        identifier
+      }
+    }
+  }
+}

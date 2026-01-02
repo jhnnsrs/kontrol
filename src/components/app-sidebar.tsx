@@ -15,6 +15,10 @@ import {
   Server,
   ExternalLink,
   BookOpen,
+  Plus,
+  UserCircle,
+  Package,
+  Wrench,
 } from "lucide-react"
 import { ArkitektLogo } from '../logos/ArkitektLogo'
 
@@ -22,6 +26,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
+import { CreateOrganizationDialog } from "@/components/CreateOrganizationDialog"
 import {
   Sidebar,
   SidebarContent,
@@ -30,13 +35,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useUser, useConfig } from '../auth'
-import { useListOrganizationsQuery, useMeQuery } from "@/api/graphql"
+import { useListOrganizationsQuery, useMeQuery, useListServicesQuery } from "@/api/graphql"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser()
   const config = useConfig()
   const { data: orgData } = useListOrganizationsQuery({ skip: !user })
   const { data: meData } = useMeQuery({ skip: !user })
+  const { data: servicesData } = useListServicesQuery({ skip: !user })
+  const [createOrgOpen, setCreateOrgOpen] = React.useState(false)
 
   const organizations = orgData?.organizations.map(org => ({
     name: org.name,
@@ -55,43 +62,55 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "",
   }
 
+  // Build services navigation items
+  const servicesItems = servicesData?.services.map(service => ({
+    title: service.identifier,
+    url: `/services/${service.id}`,
+  })) || []
+
   // Navigation items based on authentication
   const navMain = user ? [
     {
-      title: "Home",
-      url: "/",
-      icon: Home,
-      isActive: true,
-    },
-    {
-      title: "Account",
+      title: "Management",
       url: "#",
-      icon: Settings,
+      icon: Building2,
       items: [
         {
-          title: "Change Email",
-          url: "/account/email",
+          title: "Organizations",
+          url: "/",
         },
         {
-          title: "Reset Password",
-          url: "/account/password/reset",
+          title: "Members",
+          url: "/members",
+        },
+      ],
+      action: {
+        icon: Plus,
+        onClick: () => setCreateOrgOpen(true),
+        tooltip: "Create Organization",
+      },
+    },
+    {
+      title: "Apps",
+      url: "#",
+      icon: Package,
+      items: [
+        {
+          title: "Apps",
+          url: "/apps",
         },
         {
-          title: "Change Password",
-          url: "/account/password/change",
+          title: "Releases",
+          url: "/releases",
         },
-        ...(config?.data.socialaccount ? [{
-          title: "Providers",
-          url: "/account/providers",
-        }] : []),
-        ...(config?.data.mfa ? [{
-          title: "Two-Factor Auth",
-          url: "/account/2fa",
-        }] : []),
-        ...(config?.data.usersessions ? [{
-          title: "Sessions",
-          url: "/account/sessions",
-        }] : []),
+        {
+          title: "Clients",
+          url: "/clients",
+        },
+        {
+          title: "Devices",
+          url: "/devices",
+        },
       ],
     },
     {
@@ -99,38 +118,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "#",
       icon: Server,
       items: [
+        ...servicesItems,
         {
-          title: "Configure Services",
-          url: "/services",
+          title: "Service Instances",
+          url: "/service-instances",
         },
         {
-          title: "Service Status",
-          url: "/services/status",
-        },
-        {
-          title: "API Keys",
-          url: "/services/api-keys",
+          title: "Mappings",
+          url: "/service-instance-mappings",
         },
       ],
-    },
-    {
-      title: "Organizations",
-      url: "#",
-      icon: Building2,
-      items: [
-        {
-          title: "Manage Organizations",
-          url: "/organizations",
-        },
-        {
-          title: "Create Organization",
-          url: "/organizations/create",
-        },
-        {
-          title: "Members",
-          url: "/organizations/members",
-        },
-      ],
+      action: {
+        icon: Plus,
+        onClick: () => {}, // TODO: Implement register service
+        tooltip: "Register Service",
+      },
     },
   ] : [
     {
@@ -182,6 +184,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {user && <NavUser user={userData} />}
       </SidebarFooter>
       <SidebarRail />
+      <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
     </Sidebar>
   )
 }

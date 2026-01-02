@@ -1,0 +1,21 @@
+fragment ListUsedAlias on ManagementUsedAlias {
+  id
+  key
+  alias {
+    ...ListInstanceAlias
+  }
+  client {
+    ...ListClient
+  }
+}
+
+fragment DetailUsedAlias on ManagementUsedAlias {
+  id
+  key
+  alias {
+    ...InstanceAlias
+  }
+  client {
+    ...ListClient
+  }
+}

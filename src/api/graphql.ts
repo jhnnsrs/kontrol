@@ -26,6 +26,11 @@ export type Scalars = {
   _Any: { input: any; output: any; }
 };
 
+export type AcceptDeviceCodeInput = {
+  deviceCode: Scalars['ID']['input'];
+  organization: Scalars['ID']['input'];
+};
+
 export type AcceptInviteInput = {
   token: Scalars['String']['input'];
 };
@@ -44,7 +49,7 @@ export type CancelInviteInput = {
   id: Scalars['ID']['input'];
 };
 
-/** Client(id, name, release, oauth2_client, kind, user, organization, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, logo) */
+/** Client(id, functional, name, release, oauth2_client, kind, user, organization, redirect_uris, public, token, node, public_sources, tenant, created_at, requirements_hash, logo) */
 export type ClientFilter = {
   AND?: InputMaybe<ClientFilter>;
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
@@ -52,6 +57,14 @@ export type ClientFilter = {
   OR?: InputMaybe<ClientFilter>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateAliasInput = {
+  host: Scalars['String']['input'];
+  kind: Scalars['String']['input'];
+  path?: InputMaybe<Scalars['String']['input']>;
+  port: Scalars['Int']['input'];
+  serviceInstance: Scalars['ID']['input'];
 };
 
 export type CreateInviteInput = {
@@ -65,8 +78,16 @@ export type CreateOrganizationInput = {
   name: Scalars['String']['input'];
 };
 
+export type DeclineDeviceCodeInput = {
+  deviceCode: Scalars['ID']['input'];
+};
+
 export type DeclineInviteInput = {
   token: Scalars['String']['input'];
+};
+
+export type DeleteAliasInput = {
+  id: Scalars['ID']['input'];
 };
 
 /** ComputeNode(id, node_id, name, organization) */
@@ -132,8 +153,10 @@ export type ManagementApp = {
  */
 export type ManagementClient = {
   __typename?: 'ManagementClient';
-  /** The node this runs on */
+  /** Check if the client is active */
   device?: Maybe<ManagementDevice>;
+  /** Is this client functional? A non-functional client cannot be used to authenticate users. */
+  functional: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   /** The issue url of the client. This is the url where users can report issues and get more information about the client. */
   issueUrl?: Maybe<Scalars['String']['output']>;
@@ -153,8 +176,34 @@ export type ManagementClient = {
   release: ManagementRelease;
   /** The configuration of the client. This is the configuration that will be sent to the client. It should never contain sensitive information. */
   token: Scalars['String']['output'];
+  /** The aliases that are used by this client. */
+  usedAliases: Array<ManagementUsedAlias>;
   /** If the client is a DEVELOPMENT client, which requires no further authentication, this is the user that is authenticated with the client. */
   user?: Maybe<ManagementUser>;
+};
+
+
+/**
+ * A client is a way of authenticating users with a release.
+ *  The strategy of authentication is defined by the kind of client. And allows for different authentication flow.
+ *  E.g a client can be a DESKTOP app, that might be used by multiple users, or a WEBSITE that wants to connect to a user's account,
+ *  but also a DEVELOPMENT client that is used by a developer to test the app. The client model thinly wraps the oauth2 client model, which is used to authenticate users.
+ */
+export type ManagementClientMappingsArgs = {
+  filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+/**
+ * A client is a way of authenticating users with a release.
+ *  The strategy of authentication is defined by the kind of client. And allows for different authentication flow.
+ *  E.g a client can be a DESKTOP app, that might be used by multiple users, or a WEBSITE that wants to connect to a user's account,
+ *  but also a DEVELOPMENT client that is used by a developer to test the app. The client model thinly wraps the oauth2 client model, which is used to authenticate users.
+ */
+export type ManagementClientUsedAliasesArgs = {
+  filters?: InputMaybe<DeviceFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 /** An Organization is a group of users that can work together on a project. */
@@ -200,7 +249,8 @@ export type ManagementDeviceCode = {
   id: Scalars['ID']['output'];
   /** The kind of staging client */
   stagingKind: Scalars['String']['output'];
-  stagingManifest: ManagementManifest;
+  /** Check if the device code is still valid */
+  stagingManifest?: Maybe<ManagementStagingManifest>;
   user?: Maybe<ManagementUser>;
 };
 
@@ -278,6 +328,15 @@ export type ManagementInstanceAlias = {
   port?: Maybe<Scalars['Int']['output']>;
   /** Is this alias using SSL? If true, the alias will be accessed via https:// instead of http://. This is used to indicate that the alias is secure and should be accessed via SSL */
   ssl: Scalars['Boolean']['output'];
+  /** The usages of this alias by clients. */
+  usages: Array<ManagementUsedAlias>;
+};
+
+
+/** An alias for a service instance. This is used to provide a more user-friendly name for the instance. */
+export type ManagementInstanceAliasUsagesArgs = {
+  filters?: InputMaybe<DeviceFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 /** A single-use magic invite link that allows one person to join an organization. */
@@ -329,17 +388,6 @@ export type ManagementLayer = {
 export type ManagementLayerInstancesArgs = {
   filters?: InputMaybe<ServiceInstanceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
-};
-
-export type ManagementManifest = {
-  __typename?: 'ManagementManifest';
-  description: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  identifier: Scalars['String']['output'];
-  logo?: Maybe<Scalars['String']['output']>;
-  name: Scalars['String']['output'];
-  url: Scalars['String']['output'];
-  version: Scalars['String']['output'];
 };
 
 /**
@@ -480,12 +528,12 @@ export type ManagementProfile = {
   name?: Maybe<Scalars['String']['output']>;
 };
 
-/** A public source where users can find more information about the client. E.g. a GitHub repository or a website. */
+/** A Public Source is a source of information about a client that is publicly available. E.g. a GitHub repository or a website. */
 export type ManagementPublicSource = {
   __typename?: 'ManagementPublicSource';
-  /** The kind of the source. E.g. 'github' or 'website'. */
+  /** The kind of the public source. E.g. `github` or `website`. */
   kind: Scalars['String']['output'];
-  /** The url of the source. E.g.  */
+  /** The url of the public source. */
   url: Scalars['String']['output'];
 };
 
@@ -620,6 +668,13 @@ export type ManagementServiceInstanceDeniedUsersArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
+
+/** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
+export type ManagementServiceInstanceMappingsArgs = {
+  filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
 /** A ServiceInstance is a configured instance of a Service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
 export type ManagementServiceInstanceMapping = {
   __typename?: 'ManagementServiceInstanceMapping';
@@ -632,6 +687,45 @@ export type ManagementServiceInstanceMapping = {
   key: Scalars['String']['output'];
   /** Is this mapping optional? If a mapping is optional, you can configure the client without this mapping. */
   optional: Scalars['Boolean']['output'];
+};
+
+export type ManagementStagingManifest = {
+  __typename?: 'ManagementStagingManifest';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier: Scalars['String']['output'];
+  logo?: Maybe<Scalars['String']['output']>;
+  nodeId: Scalars['ID']['output'];
+  publicSources: Array<ManagementStagingPublicSource>;
+  repoUrl?: Maybe<Scalars['String']['output']>;
+  requirements: Array<ManagementStagingRequirement>;
+  scopes: Array<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+  version: Scalars['String']['output'];
+};
+
+export type ManagementStagingPublicSource = {
+  __typename?: 'ManagementStagingPublicSource';
+  description: Scalars['String']['output'];
+  identifier: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+};
+
+export type ManagementStagingRequirement = {
+  __typename?: 'ManagementStagingRequirement';
+  description: Scalars['String']['output'];
+  identifier: Scalars['String']['output'];
+  key: Scalars['String']['output'];
+};
+
+/** Docstring for UsedAlias */
+export type ManagementUsedAlias = {
+  __typename?: 'ManagementUsedAlias';
+  /** The alias that is used. */
+  alias?: Maybe<ManagementInstanceAlias>;
+  /** The client that is using the alias. */
+  client: ManagementClient;
+  id: Scalars['ID']['output'];
+  key: Scalars['String']['output'];
 };
 
 /**
@@ -735,12 +829,22 @@ export type MembershipFilter = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  acceptDeviceCode: ManagementClient;
   acceptInvite: ManagementMembership;
   cancelInvite: ManagementInvite;
+  changeOrganizationOwner: ManagementOrganization;
+  createAlias: ManagementInstanceAlias;
   createInvite: ManagementInvite;
   createOrganization: ManagementOrganization;
+  declineDeviceCode: ManagementDeviceCode;
   /** Decline an invite to join an organization. */
   declineInvite: ManagementInvite;
+  deleteAlias: Scalars['ID']['output'];
+};
+
+
+export type MutationAcceptDeviceCodeArgs = {
+  input: AcceptDeviceCodeInput;
 };
 
 
@@ -754,6 +858,17 @@ export type MutationCancelInviteArgs = {
 };
 
 
+export type MutationChangeOrganizationOwnerArgs = {
+  newOwnerId: Scalars['ID']['input'];
+  organizationId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateAliasArgs = {
+  input: CreateAliasInput;
+};
+
+
 export type MutationCreateInviteArgs = {
   input: CreateInviteInput;
 };
@@ -764,8 +879,18 @@ export type MutationCreateOrganizationArgs = {
 };
 
 
+export type MutationDeclineDeviceCodeArgs = {
+  input: DeclineDeviceCodeInput;
+};
+
+
 export type MutationDeclineInviteArgs = {
   input: DeclineInviteInput;
+};
+
+
+export type MutationDeleteAliasArgs = {
+  input: DeleteAliasInput;
 };
 
 export type OffsetPaginationInput = {
@@ -784,6 +909,14 @@ export type OrganizationFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
+/** Result of validating a device code against an organization */
+export type PotentialMapping = {
+  __typename?: 'PotentialMapping';
+  key: Scalars['String']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
+  serviceInstance?: Maybe<ManagementServiceInstance>;
+};
+
 export type Query = {
   __typename?: 'Query';
   _service: _Service;
@@ -793,10 +926,12 @@ export type Query = {
   clients: Array<ManagementClient>;
   device: ManagementDevice;
   deviceCode: ManagementDeviceCode;
+  deviceCodeByCode: ManagementDeviceCode;
   deviceGroup: ManagementDeviceGroup;
   deviceGroups: Array<ManagementDeviceGroup>;
   devices: Array<ManagementDevice>;
   friends: Array<ManagementUser>;
+  inviteByCode: ManagementInvite;
   layer: ManagementLayer;
   layers: Array<ManagementLayer>;
   me: ManagementUser;
@@ -807,8 +942,13 @@ export type Query = {
   releases: Array<ManagementRelease>;
   service: ManagementService;
   serviceInstance: ManagementServiceInstance;
+  serviceInstanceMapping: ManagementServiceInstanceMapping;
+  serviceInstanceMappings: Array<ManagementServiceInstanceMapping>;
   serviceInstances: Array<ManagementServiceInstance>;
   services: Array<ManagementService>;
+  usedAlias: ManagementUsedAlias;
+  usedAliases: Array<ManagementUsedAlias>;
+  validateDeviceCode: ValidationResult;
 };
 
 
@@ -844,6 +984,11 @@ export type QueryDeviceCodeArgs = {
 };
 
 
+export type QueryDeviceCodeByCodeArgs = {
+  deviceCode: Scalars['String']['input'];
+};
+
+
 export type QueryDeviceGroupArgs = {
   id: Scalars['ID']['input'];
 };
@@ -864,6 +1009,11 @@ export type QueryDevicesArgs = {
 export type QueryFriendsArgs = {
   filters?: InputMaybe<UserFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryInviteByCodeArgs = {
+  inviteCode: Scalars['String']['input'];
 };
 
 
@@ -909,6 +1059,17 @@ export type QueryServiceInstanceArgs = {
 };
 
 
+export type QueryServiceInstanceMappingArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryServiceInstanceMappingsArgs = {
+  filters?: InputMaybe<ServiceInstanceMappingFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
 export type QueryServiceInstancesArgs = {
   filters?: InputMaybe<ServiceInstanceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -918,6 +1079,23 @@ export type QueryServiceInstancesArgs = {
 export type QueryServicesArgs = {
   filters?: InputMaybe<ServiceFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryUsedAliasArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryUsedAliasesArgs = {
+  filters?: InputMaybe<DeviceFilter>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryValidateDeviceCodeArgs = {
+  deviceCode: Scalars['ID']['input'];
+  organization: Scalars['ID']['input'];
 };
 
 /** __doc__ */
@@ -947,6 +1125,16 @@ export type ServiceInstanceFilter = {
   DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
   NOT?: InputMaybe<ServiceInstanceFilter>;
   OR?: InputMaybe<ServiceInstanceFilter>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** ServiceInstanceMapping(id, client, instance, key, description, optional) */
+export type ServiceInstanceMappingFilter = {
+  AND?: InputMaybe<ServiceInstanceMappingFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ServiceInstanceMappingFilter>;
+  OR?: InputMaybe<ServiceInstanceMappingFilter>;
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   search?: InputMaybe<Scalars['String']['input']>;
 };
@@ -988,26 +1176,35 @@ export type UserFilter = {
   username?: InputMaybe<StrFilterLookup>;
 };
 
+export type ValidationResult = {
+  __typename?: 'ValidationResult';
+  mappings: Array<PotentialMapping>;
+  reason?: Maybe<Scalars['String']['output']>;
+  valid: Scalars['Boolean']['output'];
+};
+
 export type _Service = {
   __typename?: '_Service';
   sdl: Scalars['String']['output'];
 };
 
-export type InstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', host?: string | null, port?: number | null, ssl: boolean, challenge: string, kind: string };
+export type InstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } };
 
-export type ListInstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', host?: string | null, port?: number | null, ssl: boolean, challenge: string, kind: string };
+export type ListInstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } };
 
 export type DetailAppFragment = { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, releases: Array<{ __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
 
 export type ListAppFragment = { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
-export type DetailClientFragment = { __typename?: 'ManagementClient', id: string, token: string, name: string, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> };
+export type DetailClientFragment = { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> };
 
 export type ListClientFragment = { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } };
 
 export type DeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
 
 export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string };
+
+export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
 export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> };
 
@@ -1041,17 +1238,49 @@ export type ListServiceFragment = { __typename?: 'ManagementService', identifier
 
 export type ServiceFragment = { __typename?: 'ManagementService', identifier: any, id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }> };
 
-export type ServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', host?: string | null, port?: number | null, ssl: boolean, challenge: string, kind: string }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
+export type ServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
 export type ListServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
 
 export type ListServiceInstanceMappingFragment = { __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
+
+export type ListUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
+
+export type DetailUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
 
 export type ListUserFragment = { __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
 export type DetailUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, groups: Array<{ __typename?: 'ManagementGroup', id: string, name: string }>, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, organization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
 
 export type MeUserFragment = { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, firstName?: string | null, lastName?: string | null, avatar?: string | null, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null }, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, organization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
+
+export type CreateAliasMutationVariables = Exact<{
+  input: CreateAliasInput;
+}>;
+
+
+export type CreateAliasMutation = { __typename?: 'Mutation', createAlias: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } };
+
+export type DeleteAliasMutationVariables = Exact<{
+  input: DeleteAliasInput;
+}>;
+
+
+export type DeleteAliasMutation = { __typename?: 'Mutation', deleteAlias: string };
+
+export type AcceptDeviceCodeMutationVariables = Exact<{
+  input: AcceptDeviceCodeInput;
+}>;
+
+
+export type AcceptDeviceCodeMutation = { __typename?: 'Mutation', acceptDeviceCode: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
+
+export type DeclineDeviceCodeMutationVariables = Exact<{
+  input: DeclineDeviceCodeInput;
+}>;
+
+
+export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
 
 export type CreateInviteMutationVariables = Exact<{
   input: CreateInviteInput;
@@ -1066,6 +1295,20 @@ export type AcceptInviteMutationVariables = Exact<{
 
 
 export type AcceptInviteMutation = { __typename?: 'Mutation', acceptInvite: { __typename?: 'ManagementMembership', organization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, invites: Array<{ __typename?: 'ManagementInvite', status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } } };
+
+export type DeclineInviteMutationVariables = Exact<{
+  input: DeclineInviteInput;
+}>;
+
+
+export type DeclineInviteMutation = { __typename?: 'Mutation', declineInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, invites: Array<{ __typename?: 'ManagementInvite', status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
+
+export type CreateOrganizationMutationVariables = Exact<{
+  input: CreateOrganizationInput;
+}>;
+
+
+export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, invites: Array<{ __typename?: 'ManagementInvite', status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> } };
 
 export type AppsQueryVariables = Exact<{
   filters?: InputMaybe<AppFilter>;
@@ -1095,7 +1338,7 @@ export type DetailClientQueryVariables = Exact<{
 }>;
 
 
-export type DetailClientQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, token: string, name: string, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
+export type DetailClientQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
 
 export type ListDevicesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -1112,7 +1355,20 @@ export type GetDeviceQueryVariables = Exact<{
 
 export type GetDeviceQuery = { __typename?: 'Query', device: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> } };
 
-export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingManifest: { __typename?: 'ManagementManifest', logo?: string | null, identifier: string, version: string } };
+export type DeviceCodeByCodeQueryVariables = Exact<{
+  code: Scalars['String']['input'];
+}>;
+
+
+export type DeviceCodeByCodeQuery = { __typename?: 'Query', deviceCodeByCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+
+export type ValidateDeviceCodeQueryVariables = Exact<{
+  deviceCode: Scalars['ID']['input'];
+  organization: Scalars['ID']['input'];
+}>;
+
+
+export type ValidateDeviceCodeQuery = { __typename?: 'Query', validateDeviceCode: { __typename?: 'ValidationResult', valid: boolean, reason?: string | null, mappings: Array<{ __typename?: 'PotentialMapping', key: string, serviceInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string } | null }> } };
 
 export type ListDeviceGroupQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -1128,6 +1384,13 @@ export type GetDeviceGroupQueryVariables = Exact<{
 
 
 export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> } };
+
+export type InviteByCodeQueryVariables = Exact<{
+  code: Scalars['String']['input'];
+}>;
+
+
+export type InviteByCodeQuery = { __typename?: 'Query', inviteByCode: { __typename?: 'ManagementInvite', id: string, token: string, status: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, invites: Array<{ __typename?: 'ManagementInvite', status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
 export type LayersQueryVariables = Exact<{
   filters?: InputMaybe<LayerFilter>;
@@ -1197,7 +1460,22 @@ export type GetServiceInstanceQueryVariables = Exact<{
 }>;
 
 
-export type GetServiceInstanceQuery = { __typename?: 'Query', serviceInstance: { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', host?: string | null, port?: number | null, ssl: boolean, challenge: string, kind: string }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
+export type GetServiceInstanceQuery = { __typename?: 'Query', serviceInstance: { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
+
+export type ListServiceInstanceMappingsQueryVariables = Exact<{
+  pagination?: InputMaybe<OffsetPaginationInput>;
+  filters?: InputMaybe<ServiceInstanceMappingFilter>;
+}>;
+
+
+export type ListServiceInstanceMappingsQuery = { __typename?: 'Query', serviceInstanceMappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }> };
+
+export type GetServiceInstanceMappingQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetServiceInstanceMappingQuery = { __typename?: 'Query', serviceInstanceMapping: { __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
 
 export type ListServicesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -1214,15 +1492,21 @@ export type GetServiceQueryVariables = Exact<{
 
 export type GetServiceQuery = { __typename?: 'Query', service: { __typename?: 'ManagementService', identifier: any, id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }> } };
 
-export const InstanceAliasFragmentDoc = gql`
-    fragment InstanceAlias on ManagementInstanceAlias {
-  host
-  port
-  ssl
-  challenge
-  kind
-}
-    `;
+export type ListUsedAliasesQueryVariables = Exact<{
+  pagination?: InputMaybe<OffsetPaginationInput>;
+  filters?: InputMaybe<DeviceFilter>;
+}>;
+
+
+export type ListUsedAliasesQuery = { __typename?: 'Query', usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }> };
+
+export type GetUsedAliasQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetUsedAliasQuery = { __typename?: 'Query', usedAlias: { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
+
 export const ListAppFragmentDoc = gql`
     fragment ListApp on ManagementApp {
   id
@@ -1339,6 +1623,34 @@ export const ListServiceInstanceMappingFragmentDoc = gql`
 }
     ${ListServiceInstanceFragmentDoc}
 ${ListClientFragmentDoc}`;
+export const ListInstanceAliasFragmentDoc = gql`
+    fragment ListInstanceAlias on ManagementInstanceAlias {
+  id
+  host
+  port
+  ssl
+  path
+  challenge
+  kind
+  layer {
+    id
+    name
+  }
+}
+    `;
+export const ListUsedAliasFragmentDoc = gql`
+    fragment ListUsedAlias on ManagementUsedAlias {
+  id
+  key
+  alias {
+    ...ListInstanceAlias
+  }
+  client {
+    ...ListClient
+  }
+}
+    ${ListInstanceAliasFragmentDoc}
+${ListClientFragmentDoc}`;
 export const DetailClientFragmentDoc = gql`
     fragment DetailClient on ManagementClient {
   id
@@ -1348,6 +1660,7 @@ export const DetailClientFragmentDoc = gql`
     id
     username
   }
+  functional
   kind
   release {
     ...ListRelease
@@ -1357,6 +1670,9 @@ export const DetailClientFragmentDoc = gql`
   }
   mappings {
     ...ListServiceInstanceMapping
+  }
+  usedAliases {
+    ...ListUsedAlias
   }
   device {
     id
@@ -1369,7 +1685,8 @@ export const DetailClientFragmentDoc = gql`
   }
 }
     ${ListReleaseFragmentDoc}
-${ListServiceInstanceMappingFragmentDoc}`;
+${ListServiceInstanceMappingFragmentDoc}
+${ListUsedAliasFragmentDoc}`;
 export const ListDeviceGroupFragmentDoc = gql`
     fragment ListDeviceGroup on ManagementDeviceGroup {
   id
@@ -1390,6 +1707,32 @@ export const DeviceFragmentDoc = gql`
 }
     ${ListClientFragmentDoc}
 ${ListDeviceGroupFragmentDoc}`;
+export const DeviceCodeFragmentDoc = gql`
+    fragment DeviceCode on ManagementDeviceCode {
+  id
+  code
+  stagingKind
+  stagingManifest {
+    identifier
+    version
+    logo
+    description
+    url
+  }
+  client {
+    id
+    kind
+    name
+    release {
+      version
+      scopes
+      app {
+        identifier
+      }
+    }
+  }
+}
+    `;
 export const ListDeviceFragmentDoc = gql`
     fragment ListDevice on ManagementDevice {
   id
@@ -1602,15 +1945,6 @@ export const ServiceFragmentDoc = gql`
   }
 }
     ${ListServiceInstanceFragmentDoc}`;
-export const ListInstanceAliasFragmentDoc = gql`
-    fragment ListInstanceAlias on ManagementInstanceAlias {
-  host
-  port
-  ssl
-  challenge
-  kind
-}
-    `;
 export const ServiceInstanceFragmentDoc = gql`
     fragment ServiceInstance on ManagementServiceInstance {
   identifier
@@ -1640,6 +1974,34 @@ export const ServiceInstanceFragmentDoc = gql`
     ${ListUserFragmentDoc}
 ${ListServiceInstanceMappingFragmentDoc}
 ${ListInstanceAliasFragmentDoc}`;
+export const InstanceAliasFragmentDoc = gql`
+    fragment InstanceAlias on ManagementInstanceAlias {
+  id
+  host
+  port
+  ssl
+  path
+  challenge
+  kind
+  layer {
+    id
+    name
+  }
+}
+    `;
+export const DetailUsedAliasFragmentDoc = gql`
+    fragment DetailUsedAlias on ManagementUsedAlias {
+  id
+  key
+  alias {
+    ...InstanceAlias
+  }
+  client {
+    ...ListClient
+  }
+}
+    ${InstanceAliasFragmentDoc}
+${ListClientFragmentDoc}`;
 export const MembershipFragmentDoc = gql`
     fragment Membership on ManagementMembership {
   id
@@ -1690,17 +2052,136 @@ export const MeUserFragmentDoc = gql`
 }
     ${ProfileFragmentDoc}
 ${MembershipFragmentDoc}`;
-export const DeviceCodeFragmentDoc = gql`
-    fragment DeviceCode on ManagementDeviceCode {
-  id
-  code
-  stagingManifest {
-    logo
-    identifier
-    version
+export const CreateAliasDocument = gql`
+    mutation CreateAlias($input: CreateAliasInput!) {
+  createAlias(input: $input) {
+    ...InstanceAlias
   }
 }
+    ${InstanceAliasFragmentDoc}`;
+export type CreateAliasMutationFn = Apollo.MutationFunction<CreateAliasMutation, CreateAliasMutationVariables>;
+
+/**
+ * __useCreateAliasMutation__
+ *
+ * To run a mutation, you first call `useCreateAliasMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateAliasMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createAliasMutation, { data, loading, error }] = useCreateAliasMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateAliasMutation(baseOptions?: Apollo.MutationHookOptions<CreateAliasMutation, CreateAliasMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateAliasMutation, CreateAliasMutationVariables>(CreateAliasDocument, options);
+      }
+export type CreateAliasMutationHookResult = ReturnType<typeof useCreateAliasMutation>;
+export type CreateAliasMutationResult = Apollo.MutationResult<CreateAliasMutation>;
+export type CreateAliasMutationOptions = Apollo.BaseMutationOptions<CreateAliasMutation, CreateAliasMutationVariables>;
+export const DeleteAliasDocument = gql`
+    mutation DeleteAlias($input: DeleteAliasInput!) {
+  deleteAlias(input: $input)
+}
     `;
+export type DeleteAliasMutationFn = Apollo.MutationFunction<DeleteAliasMutation, DeleteAliasMutationVariables>;
+
+/**
+ * __useDeleteAliasMutation__
+ *
+ * To run a mutation, you first call `useDeleteAliasMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteAliasMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteAliasMutation, { data, loading, error }] = useDeleteAliasMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteAliasMutation(baseOptions?: Apollo.MutationHookOptions<DeleteAliasMutation, DeleteAliasMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteAliasMutation, DeleteAliasMutationVariables>(DeleteAliasDocument, options);
+      }
+export type DeleteAliasMutationHookResult = ReturnType<typeof useDeleteAliasMutation>;
+export type DeleteAliasMutationResult = Apollo.MutationResult<DeleteAliasMutation>;
+export type DeleteAliasMutationOptions = Apollo.BaseMutationOptions<DeleteAliasMutation, DeleteAliasMutationVariables>;
+export const AcceptDeviceCodeDocument = gql`
+    mutation AcceptDeviceCode($input: AcceptDeviceCodeInput!) {
+  acceptDeviceCode(input: $input) {
+    ...DetailClient
+  }
+}
+    ${DetailClientFragmentDoc}`;
+export type AcceptDeviceCodeMutationFn = Apollo.MutationFunction<AcceptDeviceCodeMutation, AcceptDeviceCodeMutationVariables>;
+
+/**
+ * __useAcceptDeviceCodeMutation__
+ *
+ * To run a mutation, you first call `useAcceptDeviceCodeMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAcceptDeviceCodeMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [acceptDeviceCodeMutation, { data, loading, error }] = useAcceptDeviceCodeMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAcceptDeviceCodeMutation(baseOptions?: Apollo.MutationHookOptions<AcceptDeviceCodeMutation, AcceptDeviceCodeMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AcceptDeviceCodeMutation, AcceptDeviceCodeMutationVariables>(AcceptDeviceCodeDocument, options);
+      }
+export type AcceptDeviceCodeMutationHookResult = ReturnType<typeof useAcceptDeviceCodeMutation>;
+export type AcceptDeviceCodeMutationResult = Apollo.MutationResult<AcceptDeviceCodeMutation>;
+export type AcceptDeviceCodeMutationOptions = Apollo.BaseMutationOptions<AcceptDeviceCodeMutation, AcceptDeviceCodeMutationVariables>;
+export const DeclineDeviceCodeDocument = gql`
+    mutation DeclineDeviceCode($input: DeclineDeviceCodeInput!) {
+  declineDeviceCode(input: $input) {
+    ...DeviceCode
+  }
+}
+    ${DeviceCodeFragmentDoc}`;
+export type DeclineDeviceCodeMutationFn = Apollo.MutationFunction<DeclineDeviceCodeMutation, DeclineDeviceCodeMutationVariables>;
+
+/**
+ * __useDeclineDeviceCodeMutation__
+ *
+ * To run a mutation, you first call `useDeclineDeviceCodeMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeclineDeviceCodeMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [declineDeviceCodeMutation, { data, loading, error }] = useDeclineDeviceCodeMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeclineDeviceCodeMutation(baseOptions?: Apollo.MutationHookOptions<DeclineDeviceCodeMutation, DeclineDeviceCodeMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeclineDeviceCodeMutation, DeclineDeviceCodeMutationVariables>(DeclineDeviceCodeDocument, options);
+      }
+export type DeclineDeviceCodeMutationHookResult = ReturnType<typeof useDeclineDeviceCodeMutation>;
+export type DeclineDeviceCodeMutationResult = Apollo.MutationResult<DeclineDeviceCodeMutation>;
+export type DeclineDeviceCodeMutationOptions = Apollo.BaseMutationOptions<DeclineDeviceCodeMutation, DeclineDeviceCodeMutationVariables>;
 export const CreateInviteDocument = gql`
     mutation CreateInvite($input: CreateInviteInput!) {
   createInvite(input: $input) {
@@ -1769,6 +2250,72 @@ export function useAcceptInviteMutation(baseOptions?: Apollo.MutationHookOptions
 export type AcceptInviteMutationHookResult = ReturnType<typeof useAcceptInviteMutation>;
 export type AcceptInviteMutationResult = Apollo.MutationResult<AcceptInviteMutation>;
 export type AcceptInviteMutationOptions = Apollo.BaseMutationOptions<AcceptInviteMutation, AcceptInviteMutationVariables>;
+export const DeclineInviteDocument = gql`
+    mutation DeclineInvite($input: DeclineInviteInput!) {
+  declineInvite(input: $input) {
+    ...Invite
+  }
+}
+    ${InviteFragmentDoc}`;
+export type DeclineInviteMutationFn = Apollo.MutationFunction<DeclineInviteMutation, DeclineInviteMutationVariables>;
+
+/**
+ * __useDeclineInviteMutation__
+ *
+ * To run a mutation, you first call `useDeclineInviteMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeclineInviteMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [declineInviteMutation, { data, loading, error }] = useDeclineInviteMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeclineInviteMutation(baseOptions?: Apollo.MutationHookOptions<DeclineInviteMutation, DeclineInviteMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeclineInviteMutation, DeclineInviteMutationVariables>(DeclineInviteDocument, options);
+      }
+export type DeclineInviteMutationHookResult = ReturnType<typeof useDeclineInviteMutation>;
+export type DeclineInviteMutationResult = Apollo.MutationResult<DeclineInviteMutation>;
+export type DeclineInviteMutationOptions = Apollo.BaseMutationOptions<DeclineInviteMutation, DeclineInviteMutationVariables>;
+export const CreateOrganizationDocument = gql`
+    mutation CreateOrganization($input: CreateOrganizationInput!) {
+  createOrganization(input: $input) {
+    ...Organization
+  }
+}
+    ${OrganizationFragmentDoc}`;
+export type CreateOrganizationMutationFn = Apollo.MutationFunction<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
+
+/**
+ * __useCreateOrganizationMutation__
+ *
+ * To run a mutation, you first call `useCreateOrganizationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateOrganizationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createOrganizationMutation, { data, loading, error }] = useCreateOrganizationMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateOrganizationMutation(baseOptions?: Apollo.MutationHookOptions<CreateOrganizationMutation, CreateOrganizationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateOrganizationMutation, CreateOrganizationMutationVariables>(CreateOrganizationDocument, options);
+      }
+export type CreateOrganizationMutationHookResult = ReturnType<typeof useCreateOrganizationMutation>;
+export type CreateOrganizationMutationResult = Apollo.MutationResult<CreateOrganizationMutation>;
+export type CreateOrganizationMutationOptions = Apollo.BaseMutationOptions<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
 export const AppsDocument = gql`
     query Apps($filters: AppFilter, $pagination: OffsetPaginationInput) {
   apps(filters: $filters, pagination: $pagination) {
@@ -2030,6 +2577,101 @@ export type GetDeviceQueryHookResult = ReturnType<typeof useGetDeviceQuery>;
 export type GetDeviceLazyQueryHookResult = ReturnType<typeof useGetDeviceLazyQuery>;
 export type GetDeviceSuspenseQueryHookResult = ReturnType<typeof useGetDeviceSuspenseQuery>;
 export type GetDeviceQueryResult = Apollo.QueryResult<GetDeviceQuery, GetDeviceQueryVariables>;
+export const DeviceCodeByCodeDocument = gql`
+    query DeviceCodeByCode($code: String!) {
+  deviceCodeByCode(deviceCode: $code) {
+    ...DeviceCode
+  }
+}
+    ${DeviceCodeFragmentDoc}`;
+
+/**
+ * __useDeviceCodeByCodeQuery__
+ *
+ * To run a query within a React component, call `useDeviceCodeByCodeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDeviceCodeByCodeQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useDeviceCodeByCodeQuery({
+ *   variables: {
+ *      code: // value for 'code'
+ *   },
+ * });
+ */
+export function useDeviceCodeByCodeQuery(baseOptions: Apollo.QueryHookOptions<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables> & ({ variables: DeviceCodeByCodeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>(DeviceCodeByCodeDocument, options);
+      }
+export function useDeviceCodeByCodeLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>(DeviceCodeByCodeDocument, options);
+        }
+// @ts-ignore
+export function useDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>;
+export function useDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<DeviceCodeByCodeQuery | undefined, DeviceCodeByCodeQueryVariables>;
+export function useDeviceCodeByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>(DeviceCodeByCodeDocument, options);
+        }
+export type DeviceCodeByCodeQueryHookResult = ReturnType<typeof useDeviceCodeByCodeQuery>;
+export type DeviceCodeByCodeLazyQueryHookResult = ReturnType<typeof useDeviceCodeByCodeLazyQuery>;
+export type DeviceCodeByCodeSuspenseQueryHookResult = ReturnType<typeof useDeviceCodeByCodeSuspenseQuery>;
+export type DeviceCodeByCodeQueryResult = Apollo.QueryResult<DeviceCodeByCodeQuery, DeviceCodeByCodeQueryVariables>;
+export const ValidateDeviceCodeDocument = gql`
+    query ValidateDeviceCode($deviceCode: ID!, $organization: ID!) {
+  validateDeviceCode(deviceCode: $deviceCode, organization: $organization) {
+    valid
+    reason
+    mappings {
+      key
+      serviceInstance {
+        id
+        identifier
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useValidateDeviceCodeQuery__
+ *
+ * To run a query within a React component, call `useValidateDeviceCodeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useValidateDeviceCodeQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useValidateDeviceCodeQuery({
+ *   variables: {
+ *      deviceCode: // value for 'deviceCode'
+ *      organization: // value for 'organization'
+ *   },
+ * });
+ */
+export function useValidateDeviceCodeQuery(baseOptions: Apollo.QueryHookOptions<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables> & ({ variables: ValidateDeviceCodeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>(ValidateDeviceCodeDocument, options);
+      }
+export function useValidateDeviceCodeLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>(ValidateDeviceCodeDocument, options);
+        }
+// @ts-ignore
+export function useValidateDeviceCodeSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>): Apollo.UseSuspenseQueryResult<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>;
+export function useValidateDeviceCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>): Apollo.UseSuspenseQueryResult<ValidateDeviceCodeQuery | undefined, ValidateDeviceCodeQueryVariables>;
+export function useValidateDeviceCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>(ValidateDeviceCodeDocument, options);
+        }
+export type ValidateDeviceCodeQueryHookResult = ReturnType<typeof useValidateDeviceCodeQuery>;
+export type ValidateDeviceCodeLazyQueryHookResult = ReturnType<typeof useValidateDeviceCodeLazyQuery>;
+export type ValidateDeviceCodeSuspenseQueryHookResult = ReturnType<typeof useValidateDeviceCodeSuspenseQuery>;
+export type ValidateDeviceCodeQueryResult = Apollo.QueryResult<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>;
 export const ListDeviceGroupDocument = gql`
     query ListDeviceGroup($pagination: OffsetPaginationInput, $filters: DeviceGroupFilter) {
   deviceGroups(pagination: $pagination, filters: $filters) {
@@ -2117,6 +2759,49 @@ export type GetDeviceGroupQueryHookResult = ReturnType<typeof useGetDeviceGroupQ
 export type GetDeviceGroupLazyQueryHookResult = ReturnType<typeof useGetDeviceGroupLazyQuery>;
 export type GetDeviceGroupSuspenseQueryHookResult = ReturnType<typeof useGetDeviceGroupSuspenseQuery>;
 export type GetDeviceGroupQueryResult = Apollo.QueryResult<GetDeviceGroupQuery, GetDeviceGroupQueryVariables>;
+export const InviteByCodeDocument = gql`
+    query InviteByCode($code: String!) {
+  inviteByCode(inviteCode: $code) {
+    ...Invite
+  }
+}
+    ${InviteFragmentDoc}`;
+
+/**
+ * __useInviteByCodeQuery__
+ *
+ * To run a query within a React component, call `useInviteByCodeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInviteByCodeQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInviteByCodeQuery({
+ *   variables: {
+ *      code: // value for 'code'
+ *   },
+ * });
+ */
+export function useInviteByCodeQuery(baseOptions: Apollo.QueryHookOptions<InviteByCodeQuery, InviteByCodeQueryVariables> & ({ variables: InviteByCodeQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<InviteByCodeQuery, InviteByCodeQueryVariables>(InviteByCodeDocument, options);
+      }
+export function useInviteByCodeLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<InviteByCodeQuery, InviteByCodeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<InviteByCodeQuery, InviteByCodeQueryVariables>(InviteByCodeDocument, options);
+        }
+// @ts-ignore
+export function useInviteByCodeSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<InviteByCodeQuery, InviteByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<InviteByCodeQuery, InviteByCodeQueryVariables>;
+export function useInviteByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<InviteByCodeQuery, InviteByCodeQueryVariables>): Apollo.UseSuspenseQueryResult<InviteByCodeQuery | undefined, InviteByCodeQueryVariables>;
+export function useInviteByCodeSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<InviteByCodeQuery, InviteByCodeQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<InviteByCodeQuery, InviteByCodeQueryVariables>(InviteByCodeDocument, options);
+        }
+export type InviteByCodeQueryHookResult = ReturnType<typeof useInviteByCodeQuery>;
+export type InviteByCodeLazyQueryHookResult = ReturnType<typeof useInviteByCodeLazyQuery>;
+export type InviteByCodeSuspenseQueryHookResult = ReturnType<typeof useInviteByCodeSuspenseQuery>;
+export type InviteByCodeQueryResult = Apollo.QueryResult<InviteByCodeQuery, InviteByCodeQueryVariables>;
 export const LayersDocument = gql`
     query Layers($filters: LayerFilter, $pagination: OffsetPaginationInput) {
   layers(filters: $filters, pagination: $pagination) {
@@ -2557,6 +3242,93 @@ export type GetServiceInstanceQueryHookResult = ReturnType<typeof useGetServiceI
 export type GetServiceInstanceLazyQueryHookResult = ReturnType<typeof useGetServiceInstanceLazyQuery>;
 export type GetServiceInstanceSuspenseQueryHookResult = ReturnType<typeof useGetServiceInstanceSuspenseQuery>;
 export type GetServiceInstanceQueryResult = Apollo.QueryResult<GetServiceInstanceQuery, GetServiceInstanceQueryVariables>;
+export const ListServiceInstanceMappingsDocument = gql`
+    query ListServiceInstanceMappings($pagination: OffsetPaginationInput, $filters: ServiceInstanceMappingFilter) {
+  serviceInstanceMappings(pagination: $pagination, filters: $filters) {
+    ...ListServiceInstanceMapping
+  }
+}
+    ${ListServiceInstanceMappingFragmentDoc}`;
+
+/**
+ * __useListServiceInstanceMappingsQuery__
+ *
+ * To run a query within a React component, call `useListServiceInstanceMappingsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListServiceInstanceMappingsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useListServiceInstanceMappingsQuery({
+ *   variables: {
+ *      pagination: // value for 'pagination'
+ *      filters: // value for 'filters'
+ *   },
+ * });
+ */
+export function useListServiceInstanceMappingsQuery(baseOptions?: Apollo.QueryHookOptions<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>(ListServiceInstanceMappingsDocument, options);
+      }
+export function useListServiceInstanceMappingsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>(ListServiceInstanceMappingsDocument, options);
+        }
+// @ts-ignore
+export function useListServiceInstanceMappingsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>): Apollo.UseSuspenseQueryResult<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>;
+export function useListServiceInstanceMappingsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>): Apollo.UseSuspenseQueryResult<ListServiceInstanceMappingsQuery | undefined, ListServiceInstanceMappingsQueryVariables>;
+export function useListServiceInstanceMappingsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>(ListServiceInstanceMappingsDocument, options);
+        }
+export type ListServiceInstanceMappingsQueryHookResult = ReturnType<typeof useListServiceInstanceMappingsQuery>;
+export type ListServiceInstanceMappingsLazyQueryHookResult = ReturnType<typeof useListServiceInstanceMappingsLazyQuery>;
+export type ListServiceInstanceMappingsSuspenseQueryHookResult = ReturnType<typeof useListServiceInstanceMappingsSuspenseQuery>;
+export type ListServiceInstanceMappingsQueryResult = Apollo.QueryResult<ListServiceInstanceMappingsQuery, ListServiceInstanceMappingsQueryVariables>;
+export const GetServiceInstanceMappingDocument = gql`
+    query GetServiceInstanceMapping($id: ID!) {
+  serviceInstanceMapping(id: $id) {
+    ...ListServiceInstanceMapping
+  }
+}
+    ${ListServiceInstanceMappingFragmentDoc}`;
+
+/**
+ * __useGetServiceInstanceMappingQuery__
+ *
+ * To run a query within a React component, call `useGetServiceInstanceMappingQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetServiceInstanceMappingQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetServiceInstanceMappingQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetServiceInstanceMappingQuery(baseOptions: Apollo.QueryHookOptions<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables> & ({ variables: GetServiceInstanceMappingQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>(GetServiceInstanceMappingDocument, options);
+      }
+export function useGetServiceInstanceMappingLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>(GetServiceInstanceMappingDocument, options);
+        }
+// @ts-ignore
+export function useGetServiceInstanceMappingSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>): Apollo.UseSuspenseQueryResult<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>;
+export function useGetServiceInstanceMappingSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>): Apollo.UseSuspenseQueryResult<GetServiceInstanceMappingQuery | undefined, GetServiceInstanceMappingQueryVariables>;
+export function useGetServiceInstanceMappingSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>(GetServiceInstanceMappingDocument, options);
+        }
+export type GetServiceInstanceMappingQueryHookResult = ReturnType<typeof useGetServiceInstanceMappingQuery>;
+export type GetServiceInstanceMappingLazyQueryHookResult = ReturnType<typeof useGetServiceInstanceMappingLazyQuery>;
+export type GetServiceInstanceMappingSuspenseQueryHookResult = ReturnType<typeof useGetServiceInstanceMappingSuspenseQuery>;
+export type GetServiceInstanceMappingQueryResult = Apollo.QueryResult<GetServiceInstanceMappingQuery, GetServiceInstanceMappingQueryVariables>;
 export const ListServicesDocument = gql`
     query ListServices($pagination: OffsetPaginationInput, $filters: ServiceFilter) {
   services(pagination: $pagination, filters: $filters) {
@@ -2644,3 +3416,90 @@ export type GetServiceQueryHookResult = ReturnType<typeof useGetServiceQuery>;
 export type GetServiceLazyQueryHookResult = ReturnType<typeof useGetServiceLazyQuery>;
 export type GetServiceSuspenseQueryHookResult = ReturnType<typeof useGetServiceSuspenseQuery>;
 export type GetServiceQueryResult = Apollo.QueryResult<GetServiceQuery, GetServiceQueryVariables>;
+export const ListUsedAliasesDocument = gql`
+    query ListUsedAliases($pagination: OffsetPaginationInput, $filters: DeviceFilter) {
+  usedAliases(pagination: $pagination, filters: $filters) {
+    ...ListUsedAlias
+  }
+}
+    ${ListUsedAliasFragmentDoc}`;
+
+/**
+ * __useListUsedAliasesQuery__
+ *
+ * To run a query within a React component, call `useListUsedAliasesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListUsedAliasesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useListUsedAliasesQuery({
+ *   variables: {
+ *      pagination: // value for 'pagination'
+ *      filters: // value for 'filters'
+ *   },
+ * });
+ */
+export function useListUsedAliasesQuery(baseOptions?: Apollo.QueryHookOptions<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>(ListUsedAliasesDocument, options);
+      }
+export function useListUsedAliasesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>(ListUsedAliasesDocument, options);
+        }
+// @ts-ignore
+export function useListUsedAliasesSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>): Apollo.UseSuspenseQueryResult<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>;
+export function useListUsedAliasesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>): Apollo.UseSuspenseQueryResult<ListUsedAliasesQuery | undefined, ListUsedAliasesQueryVariables>;
+export function useListUsedAliasesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>(ListUsedAliasesDocument, options);
+        }
+export type ListUsedAliasesQueryHookResult = ReturnType<typeof useListUsedAliasesQuery>;
+export type ListUsedAliasesLazyQueryHookResult = ReturnType<typeof useListUsedAliasesLazyQuery>;
+export type ListUsedAliasesSuspenseQueryHookResult = ReturnType<typeof useListUsedAliasesSuspenseQuery>;
+export type ListUsedAliasesQueryResult = Apollo.QueryResult<ListUsedAliasesQuery, ListUsedAliasesQueryVariables>;
+export const GetUsedAliasDocument = gql`
+    query GetUsedAlias($id: ID!) {
+  usedAlias(id: $id) {
+    ...DetailUsedAlias
+  }
+}
+    ${DetailUsedAliasFragmentDoc}`;
+
+/**
+ * __useGetUsedAliasQuery__
+ *
+ * To run a query within a React component, call `useGetUsedAliasQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetUsedAliasQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetUsedAliasQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetUsedAliasQuery(baseOptions: Apollo.QueryHookOptions<GetUsedAliasQuery, GetUsedAliasQueryVariables> & ({ variables: GetUsedAliasQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<GetUsedAliasQuery, GetUsedAliasQueryVariables>(GetUsedAliasDocument, options);
+      }
+export function useGetUsedAliasLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetUsedAliasQuery, GetUsedAliasQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<GetUsedAliasQuery, GetUsedAliasQueryVariables>(GetUsedAliasDocument, options);
+        }
+// @ts-ignore
+export function useGetUsedAliasSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<GetUsedAliasQuery, GetUsedAliasQueryVariables>): Apollo.UseSuspenseQueryResult<GetUsedAliasQuery, GetUsedAliasQueryVariables>;
+export function useGetUsedAliasSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUsedAliasQuery, GetUsedAliasQueryVariables>): Apollo.UseSuspenseQueryResult<GetUsedAliasQuery | undefined, GetUsedAliasQueryVariables>;
+export function useGetUsedAliasSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUsedAliasQuery, GetUsedAliasQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<GetUsedAliasQuery, GetUsedAliasQueryVariables>(GetUsedAliasDocument, options);
+        }
+export type GetUsedAliasQueryHookResult = ReturnType<typeof useGetUsedAliasQuery>;
+export type GetUsedAliasLazyQueryHookResult = ReturnType<typeof useGetUsedAliasLazyQuery>;
+export type GetUsedAliasSuspenseQueryHookResult = ReturnType<typeof useGetUsedAliasSuspenseQuery>;
+export type GetUsedAliasQueryResult = Apollo.QueryResult<GetUsedAliasQuery, GetUsedAliasQueryVariables>;

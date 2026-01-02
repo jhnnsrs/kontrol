@@ -1,0 +1,5 @@
+query InviteByCode($code: String!) {
+  inviteByCode(inviteCode: $code) {
+    ...Invite
+  }
+}

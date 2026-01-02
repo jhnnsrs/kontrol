@@ -1,0 +1,11 @@
+mutation AcceptDeviceCode($input: AcceptDeviceCodeInput!) {
+  acceptDeviceCode(input: $input) {
+    ...DetailClient
+  }
+}
+
+mutation DeclineDeviceCode($input: DeclineDeviceCodeInput!) {
+  declineDeviceCode(input: $input) {
+    ...DeviceCode
+  }
+}

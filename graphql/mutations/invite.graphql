@@ -12,3 +12,9 @@ mutation AcceptInvite($input: AcceptInviteInput!) {
     }
   }
 }
+
+mutation DeclineInvite($input: DeclineInviteInput!) {
+  declineInvite(input: $input) {
+    ...Invite
+  }
+}

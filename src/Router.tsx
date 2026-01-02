@@ -5,7 +5,23 @@ import {
   useRouteError,
 } from 'react-router-dom'
 import Home from './Home'
+import Profile from './Profile'
+import Account from './Account'
 import Organization from './Organization'
+import Services from './services/Services'
+import Service from './services/Service'
+import Releases from './releases/Releases'
+import Release from './releases/Release'
+import Clients from './clients/Clients'
+import Client from './clients/Client'
+import ServiceInstances from './services/ServiceInstances'
+import ServiceInstance from './services/ServiceInstance'
+import ServiceInstanceMappings from './services/ServiceInstanceMappings'
+import ServiceInstanceMapping from './services/ServiceInstanceMapping'
+import Apps from './apps/Apps'
+import App from './apps/App'
+import Devices from './devices/Devices'
+import Device from './devices/Device'
 import ChangeEmail from './account/ChangeEmail'
 import ChangePassword from './account/ChangePassword'
 import PasswordChangeSuccess from './account/PasswordChangeSuccess'
@@ -43,7 +59,8 @@ import ManageProviders from './socialaccount/ManageProviders'
 import ProviderCallback from './socialaccount/ProviderCallback'
 import ProviderSignup from './socialaccount/ProviderSignup'
 import Sessions from './usersessions/Sessions'
-import { ConfigurePage, ConfigurePageDesktop, ConfigurePageNoOrg, ConfigurePageWebsiteWithErrors } from './device/ConfigurePage'
+import { ConfigurePage, } from './device/ConfigurePage'
+import { InvitePage } from './invite/InvitePage'
 
 
 function RouterErrorBoundary() {
@@ -68,10 +85,88 @@ function createRouter () {
         {
           path: '/home',
           element: <Home />
+        }
+        ,{          path: '/profile',
+          element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>
+        },
+        {
+          path: '/account',
+          element: <AuthenticatedRoute><Account /></AuthenticatedRoute>
+        },
+        {          path: '/profile',
+          element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>
+        },
+        {
+          path: '/account',
+          element: <AuthenticatedRoute><Account /></AuthenticatedRoute>
+        },
+        {
+          path: '/services',
+          element: <AuthenticatedRoute><Services /></AuthenticatedRoute>
+        },
+        {
+          path: '/services/:id',
+          element: <AuthenticatedRoute><Service /></AuthenticatedRoute>
+        },
+        {
+          path: '/releases',
+          element: <AuthenticatedRoute><Releases /></AuthenticatedRoute>
+        },
+        {
+          path: '/releases/:id',
+          element: <AuthenticatedRoute><Release /></AuthenticatedRoute>
+        },
+        {
+          path: '/clients',
+          element: <AuthenticatedRoute><Clients /></AuthenticatedRoute>
+        },
+        {
+          path: '/clients/:id',
+          element: <AuthenticatedRoute><Client /></AuthenticatedRoute>
+        },
+        {
+          path: '/service-instances',
+          element: <AuthenticatedRoute><ServiceInstances /></AuthenticatedRoute>
+        },
+        {
+          path: '/service-instances/:id',
+          element: <AuthenticatedRoute><ServiceInstance /></AuthenticatedRoute>
+        },
+        {
+          path: '/service-instance-mappings',
+          element: <AuthenticatedRoute><ServiceInstanceMappings /></AuthenticatedRoute>
+        },
+        {
+          path: '/service-instance-mappings/:id',
+          element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>
+        },
+        {
+          path: '/apps',
+          element: <AuthenticatedRoute><Apps /></AuthenticatedRoute>
+        },
+        {
+          path: '/apps/:id',
+          element: <AuthenticatedRoute><App /></AuthenticatedRoute>
+        },
+        {
+          path: '/devices',
+          element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>
+        },
+        {
+          path: '/devices/:id',
+          element: <AuthenticatedRoute><Device /></AuthenticatedRoute>
         },
         {
           path: '/organization/:id',
           element: <AuthenticatedRoute><Organization /></AuthenticatedRoute>
+        },
+        {
+          path: '/profile',
+          element: <AuthenticatedRoute><Profile /></AuthenticatedRoute>
+        },
+        {
+          path: '/account',
+          element: <AuthenticatedRoute><Account /></AuthenticatedRoute>
         },
         {
           path: '/account/login',
@@ -221,21 +316,13 @@ function createRouter () {
           element: <AuthenticatedRoute><Sessions /></AuthenticatedRoute>
         },
         {
-          path: '/device/configure',
+          path: '/configure/:deviceCode',
           element: <ConfigurePage />
         },
         {
-          path: '/device/configure/desktop',
-          element: <ConfigurePageDesktop />
+          path: '/invite/:code',
+          element: <InvitePage />
         },
-        {
-          path: '/device/configure/website-errors',
-          element: <ConfigurePageWebsiteWithErrors />
-        },
-        {
-          path: '/device/configure/no-org',
-          element: <ConfigurePageNoOrg />
-        }
       ].map(route => ({
         ...route,
         errorElement: <RouterErrorBoundary />

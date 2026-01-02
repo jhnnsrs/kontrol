@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { useState } from "react"
 import { useOrganizationQuery } from "./api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./components/ui/card"
@@ -90,8 +90,11 @@ export default function Organization() {
                   </div>
                   <div className="flex items-center justify-between pt-1 border-t border-border/30">
                     <p className="text-xs text-muted-foreground">
-                      Token: <span className="font-mono">{i.token}</span>
+                      Token: <span className="font-mono">/invite/{i.token}</span>
                     </p>
+                    <Link to={`/invite/${i.token}`} className="text-xs text-muted-foreground">
+                      Token: <span className="font-mono">/invite/{i.token}</span>
+                    </Link>
                     {i.acceptedBy && (
                       <p className="text-xs text-muted-foreground">
                         Accepted by <span className="font-medium text-foreground">{i.acceptedBy.username}</span>

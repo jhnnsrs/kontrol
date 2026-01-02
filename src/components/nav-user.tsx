@@ -10,6 +10,8 @@ import {
   Users,
   Smartphone,
   Rocket,
+  UserCircle,
+  Settings,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -109,41 +111,17 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link to="/account/email">
-                  <Mail />
-                  Change Email
+                <Link to="/profile">
+                  <UserCircle />
+                  Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/account/password/change">
-                  <Lock />
-                  Change Password
+                <Link to="/account">
+                  <Settings />
+                  Account Settings
                 </Link>
               </DropdownMenuItem>
-              {config?.data.socialaccount && (
-                <DropdownMenuItem asChild>
-                  <Link to="/account/providers">
-                    <Users />
-                    Providers
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              {config?.data.mfa && (
-                <DropdownMenuItem asChild>
-                  <Link to="/account/2fa">
-                    <Smartphone />
-                    Two-Factor Auth
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              {config?.data.usersessions && (
-                <DropdownMenuItem asChild>
-                  <Link to="/account/sessions">
-                    <Rocket />
-                    Sessions
-                  </Link>
-                </DropdownMenuItem>
-              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

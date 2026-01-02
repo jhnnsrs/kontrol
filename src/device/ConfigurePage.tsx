@@ -1,218 +1,329 @@
-import { useState } from "react";
-import { Configure } from "./Configure";
+import { useParams } from "react-router-dom";
+import {
+  useDeviceCodeByCodeQuery,
+  useAcceptDeviceCodeMutation,
+  useDeclineDeviceCodeMutation,
+  useListOrganizationsQuery,
+  useMeQuery,
+  useValidateDeviceCodeQuery
+} from "@/api/graphql";
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { AlertCircle, CheckCircle2, Monitor, Smartphone, Globe, XCircle } from "lucide-react";
+
+interface ConfigureFormData {
+  organization: string;
+}
+
+const APP_KIND_CONFIG = {
+  development: {
+    icon: Smartphone,
+    title: "Development App",
+    description: "Device or application requesting access to organizational data.",
+  },
+  desktop: {
+    icon: Monitor,
+    title: "Desktop App",
+    description: "Desktop application for platform authentication.",
+  },
+  website: {
+    icon: Globe,
+    title: "Website",
+    description: "Web application for platform authentication.",
+  },
+};
 
 export function ConfigurePage() {
+  const { deviceCode: code } = useParams<{ deviceCode: string }>();
+
+  const { control, watch, setValue } = useForm<ConfigureFormData>();
+  const selectedOrganization = watch("organization");
+
+  const { data: deviceCodeData, loading: deviceCodeLoading, error: deviceCodeError } = useDeviceCodeByCodeQuery({
+    variables: { code: code || "" },
+    skip: !code,
+  });
+
+  const { data: orgData } = useListOrganizationsQuery();
+  const { data: meData } = useMeQuery();
+
+  const { data: validationData } = useValidateDeviceCodeQuery({
+    variables: { deviceCode: deviceCodeData?.deviceCodeByCode?.id || "", organization: selectedOrganization },
+    skip: !deviceCodeData?.deviceCodeByCode || !selectedOrganization
+  });
+
+  const [acceptDeviceCode] = useAcceptDeviceCodeMutation();
+  const [declineDeviceCode] = useDeclineDeviceCodeMutation();
+
   const [submitted, setSubmitted] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
-  const mockUser = {
-    username: "john_doe",
-    active_organization: {
-      name: "Acme Research Lab",
-    },
-  };
+  // Preset the active organization
+  useEffect(() => {
+    if (meData?.me && orgData?.organizations) {
+      const activeOrg = orgData.organizations.find(org => org.name === meData.me.username);
+      if (activeOrg && !selectedOrganization) {
+        setValue("organization", activeOrg.id);
+      } else if (orgData.organizations.length > 0 && !selectedOrganization) {
+        setValue("organization", orgData.organizations[0].id);
+      }
+    }
+  }, [meData, orgData, selectedOrganization, setValue]);
 
-  const mockOrganizations = [
-    { id: "1", name: "Acme Research Lab" },
-    { id: "2", name: "Innovation Hub" },
-    { id: "3", name: "Tech Collective" },
-  ];
+  if (!code) {
+    return <div className="flex h-screen items-center justify-center">No code provided</div>;
+  }
 
-  const mockData = {
-    user: mockUser,
-    organizations: mockOrganizations,
-    staging_kind: "development" as const,
-    staging_logo: "https://via.placeholder.com/100",
-    staging_identifier: "my-awesome-app",
-    staging_version: "1.2.3",
-    staging_scopes: [
-      "read:data",
-      "write:data",
-      "manage:projects",
-      "execute:workflows",
-    ],
-    app: undefined, // New app
-    release: undefined, // New version
-    client: false,
-    composition_valid: true,
-    composition_requirements: {
-      "Authentication Service": "v2.0+",
-      "Data API": "v3.1+",
-      "Workflow Engine": "v1.5+",
-    },
-    staging_node: true,
-    onSubmit: (action: "allow" | "cancel", organizationId?: string) => {
-      console.log("Action:", action, "Organization:", organizationId);
-      setAuthorized(action === "allow");
+  if (deviceCodeLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (deviceCodeError) {
+    return <div className="flex h-screen items-center justify-center">Error: {deviceCodeError.message}</div>;
+  }
+
+  const deviceCode = deviceCodeData?.deviceCodeByCode;
+
+  if (!deviceCode) {
+    return <div className="flex h-screen items-center justify-center">Invalid code</div>;
+  }
+
+  const onAllow = async () => {
+    if (!selectedOrganization) return;
+    try {
+      await acceptDeviceCode({
+        variables: {
+          input: {
+            deviceCode: deviceCode.id,
+            organization: selectedOrganization
+          }
+        }
+      });
+      setAuthorized(true);
       setSubmitted(true);
-    },
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  // Show success state if submitted
+  const onCancel = async () => {
+    try {
+      await declineDeviceCode({
+        variables: {
+          input: {
+            deviceCode: deviceCode.id
+          }
+        }
+      });
+      setAuthorized(false);
+      setSubmitted(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const appKind = deviceCode.stagingKind as keyof typeof APP_KIND_CONFIG;
+  const appConfig = APP_KIND_CONFIG[appKind] || APP_KIND_CONFIG.development;
+  const Icon = appConfig.icon;
+
+  // Success state
   if (submitted) {
     return (
-      <Configure
-        {...mockData}
-        success={true}
-        authorized={authorized}
-      />
+      <div className="container flex h-screen items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>
+              {authorized ? "Successfully Authorized" : "Request Denied"}
+            </CardTitle>
+            <CardDescription>You can close this page now</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
-  // Show configuration flow
-  return <Configure {...mockData} />;
-}
+  // Main form
+  return (
+    <div className="container max-w-3xl py-8">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          {deviceCode.stagingManifest.logo ? (
+            <img src={deviceCode.stagingManifest.logo} alt="App Logo" className="h-16 w-16 rounded-lg" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
+              <Icon className="h-8 w-8" />
+            </div>
+          )}
+          <div className="flex-1 space-y-1">
+            <h1 className="text-2xl font-semibold">{appConfig.title}</h1>
+            <p className="text-sm text-muted-foreground">{appConfig.description}</p>
+            {meData?.me && (
+              <p className="text-sm text-muted-foreground">
+                Acting as <span className="font-medium">{meData.me.username}</span>
+              </p>
+            )}
+          </div>
+        </div>
 
-// Example for Desktop App
-export function ConfigurePageDesktop() {
-  const [submitted, setSubmitted] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
+        <Separator />
 
-  const mockUser = {
-    username: "jane_smith",
-    active_organization: {
-      name: "Quantum Computing Inc",
-    },
-  };
+        {/* App Identity */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {deviceCode.client ? "Claims to be registered app" : "Will establish new app"}
+            </p>
+            <p className="text-2xl font-semibold">
+              {deviceCode.client?.release.app.identifier || deviceCode.stagingManifest.identifier}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {deviceCode.client?.release ? "Claims version" : "Will establish version"}
+            </p>
+            <p className="text-xl font-medium">
+              {deviceCode.client?.release.version || deviceCode.stagingManifest.version}
+            </p>
+          </div>
+        </div>
 
-  const mockOrganizations = [
-    { id: "1", name: "Quantum Computing Inc" },
-    { id: "2", name: "Physics Lab" },
-  ];
+        <Separator />
 
-  const mockData = {
-    user: mockUser,
-    organizations: mockOrganizations,
-    staging_kind: "desktop" as const,
-    staging_logo: "https://via.placeholder.com/100",
-    staging_identifier: "quantum-desktop",
-    staging_version: "2.0.0",
-    staging_scopes: [
-      "openid",
-      "profile",
-      "email",
-      "read:quantum_data",
-      "execute:simulations",
-    ],
-    app: {
-      identifier: "quantum-desktop",
-    },
-    release: {
-      version: "1.9.5",
-      scopes: [
-        "openid",
-        "profile",
-        "email",
-        "read:quantum_data",
-      ],
-    },
-    client: true,
-    composition_valid: true,
-    composition_requirements: {
-      "OAuth Server": "v2.0+",
-      "Quantum API": "v1.0+",
-    },
-    on_node: "Jane's Workstation",
-    onSubmit: (action: "allow" | "cancel", organizationId?: string) => {
-      console.log("Action:", action, "Organization:", organizationId);
-      setAuthorized(action === "allow");
-      setSubmitted(true);
-    },
-  };
+        {/* Client & Permissions */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-medium">Client Status</p>
+            <p className="text-sm text-muted-foreground">
+              {deviceCode.client ? "Previously authorized" : "New client"}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium mb-2">
+              {deviceCode.client ? "Inherited Permissions" : "Requested Permissions"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {deviceCode.client?.release.scopes.map((scope) => (
+                <Badge key={scope} variant="secondary">
+                  {scope}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
 
-  if (submitted) {
-    return (
-      <Configure
-        {...mockData}
-        success={true}
-        authorized={authorized}
-      />
-    );
-  }
+        <Separator />
 
-  return <Configure {...mockData} />;
-}
+        {/* Organization Selection */}
+        {orgData?.organizations && orgData.organizations.length > 0 && (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Assign to Organization</p>
+              <Controller
+                control={control}
+                name="organization"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select organization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgData.organizations.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          </div>
+        )}
 
-// Example for Website with errors
-export function ConfigurePageWebsiteWithErrors() {
-  const [submitted, setSubmitted] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
+        <Separator />
 
-  const mockUser = {
-    username: "bob_admin",
-    active_organization: {
-      name: "BioTech Solutions",
-    },
-  };
+        {/* Compatibility */}
+        {validationData?.validateDeviceCode && (
+          <>
+            {validationData.validateDeviceCode.valid ? (
+              <Alert className="border-green-500/50 bg-green-500/10">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <AlertTitle className="text-green-500">Compatible</AlertTitle>
+                <AlertDescription className="text-green-600 dark:text-green-400">
+                  This app is compatible with your server
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert variant="destructive">
+                <XCircle className="h-4 w-4" />
+                <AlertTitle>Not Compatible</AlertTitle>
+                <AlertDescription>
+                  This app cannot be used with your server
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
+        )}
 
-  const mockOrganizations = [
-    { id: "1", name: "BioTech Solutions" },
-    { id: "2", name: "Research Division" },
-  ];
+        {/* Service Mappings */}
+        {validationData?.validateDeviceCode.valid && validationData.validateDeviceCode.mappings.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Service Mappings</p>
+            <ul className="space-y-1">
+              {validationData.validateDeviceCode.mappings.map((mapping) => (
+                <li key={mapping.key} className="text-sm text-muted-foreground">
+                  {mapping.key} → <span className="font-mono text-xs">{mapping.serviceInstance?.identifier}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-  const mockData = {
-    user: mockUser,
-    organizations: mockOrganizations,
-    staging_kind: "website" as const,
-    staging_logo: "https://via.placeholder.com/100",
-    staging_identifier: "biotech-portal",
-    staging_version: "3.1.0",
-    staging_scopes: [
-      "openid",
-      "profile",
-      "email",
-      "read:experiments",
-      "write:results",
-    ],
-    staging_redirect_uris: [
-      "https://biotech-portal.example.com/callback",
-      "https://biotech-portal.example.com/auth/callback",
-    ],
-    staging_public: true,
-    app: undefined,
-    release: undefined,
-    client: false,
-    composition_valid: false,
-    composition_errors: [
-      "Required service 'Experiment Database v5.0+' is not available",
-      "API Gateway version mismatch: requires v4.0+, found v3.8",
-    ],
-    composition_warnings: [
-      "Using deprecated authentication method",
-      "Redirect URI 'https://biotech-portal.example.com/callback' is not HTTPS",
-    ],
-    onSubmit: (action: "allow" | "cancel", organizationId?: string) => {
-      console.log("Action:", action, "Organization:", organizationId);
-      setAuthorized(action === "allow");
-      setSubmitted(true);
-    },
-  };
+        {/* Errors */}
+        {validationData?.validateDeviceCode && !validationData.validateDeviceCode.valid && validationData.validateDeviceCode.reason && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-destructive">Error</p>
+            <p className="text-sm text-destructive">• {validationData.validateDeviceCode.reason}</p>
+          </div>
+        )}
 
-  if (submitted) {
-    return (
-      <Configure
-        {...mockData}
-        success={true}
-        authorized={authorized}
-      />
-    );
-  }
+        {/* Warning */}
+        {validationData?.validateDeviceCode.valid && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Review Required</AlertTitle>
+            <AlertDescription>
+              This app will be able to claim these rights from users. Only allow if you understand
+              the implications.
+            </AlertDescription>
+          </Alert>
+        )}
 
-  return <Configure {...mockData} />;
-}
-
-// Example for No Organization
-export function ConfigurePageNoOrg() {
-  const mockUser = {
-    username: "new_user",
-  };
-
-  const mockData = {
-    user: mockUser,
-    onSubmit: (action: "allow" | "cancel", organizationId?: string) => {
-      console.log("Action:", action, "Organization:", organizationId);
-    },
-  };
-
-  return <Configure {...mockData} />;
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button 
+            className="flex-1" 
+            onClick={onAllow} 
+            disabled={!validationData?.validateDeviceCode.valid || !selectedOrganization}
+          >
+            Allow
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

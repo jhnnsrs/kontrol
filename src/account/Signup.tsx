@@ -21,7 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 const signupSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  username: z.string(),
   password: z.string().min(1, "Password is required"),
   passwordConfirm: z.string().min(1, "Password confirmation is required"),
 }).refine((data) => data.password === data.passwordConfirm, {
@@ -38,7 +38,7 @@ export default function Signup() {
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
       passwordConfirm: "",
     },
@@ -46,7 +46,7 @@ export default function Signup() {
 
   function onSubmit(values: z.infer<typeof signupSchema>) {
     setGlobalError(null)
-    signUp({ email: values.email, password: values.password }).then((content) => {
+    signUp({ username: values.username, password: values.password }).then((content) => {
       if (content.status === 200) {
         // Redirect to login page after successful signup
         navigate('/account/login')
@@ -88,12 +88,12 @@ export default function Signup() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} autoComplete="email" />
+                      <Input placeholder="name" {...field} autoComplete="email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

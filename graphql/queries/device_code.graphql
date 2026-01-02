@@ -1,9 +1,19 @@
-fragment DeviceCode on ManagementDeviceCode {
-  id
-  code 
-  stagingManifest {
-    logo
-    identifier 
-    version
+query DeviceCodeByCode($code: String!) {
+  deviceCodeByCode(deviceCode: $code) {
+    ...DeviceCode
+  }
+}
+
+query ValidateDeviceCode($deviceCode: ID!, $organization: ID!) {
+  validateDeviceCode(deviceCode: $deviceCode, organization: $organization) {
+    valid
+    reason
+    mappings {
+      key
+      serviceInstance {
+        id
+        identifier
+    }
+  }
   }
 }

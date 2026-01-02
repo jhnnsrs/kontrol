@@ -4,7 +4,7 @@ import { handleFormErrors } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useResolvedPath, useSearchParams } from "react-router";
 import * as z from "zod";
 
 export const flowToUrl = (flow: AuthFlow, next: string): string => {

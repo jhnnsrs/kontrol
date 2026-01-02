@@ -29,6 +29,11 @@ export function NavMain({
       title: string
       url: string
     }[]
+    action?: {
+      icon: LucideIcon
+      onClick: () => void
+      tooltip?: string
+    }
   }[]
 }) {
   return (
@@ -50,6 +55,16 @@ export function NavMain({
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
+              {item.action && (
+                <SidebarMenuButton 
+                  tooltip={item.action.tooltip}
+                  onClick={item.action.onClick}
+                  className="ml-auto"
+                  size="sm"
+                >
+                  <item.action.icon className="size-4" />
+                </SidebarMenuButton>
+              )}
               <CollapsibleContent>
                 <SidebarMenuSub>
                   {item.items?.map((subItem) => (
