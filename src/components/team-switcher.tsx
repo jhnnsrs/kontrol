@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import { useNavigate } from "react-router-dom"
+import { CreateOrganizationDialog } from "@/components/CreateOrganizationDialog"
 
 export function TeamSwitcher({
   teams,
@@ -34,6 +35,7 @@ export function TeamSwitcher({
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const [createOrgOpen, setCreateOrgOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (teams.length > 0 && !activeTeam) {
@@ -90,14 +92,15 @@ export function TeamSwitcher({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem className="gap-2 p-2" onClick={() => setCreateOrgOpen(true)}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <Plus className="size-4" />
               </div>
-              <div className="text-muted-foreground font-medium">Add team</div>
+              <div className="text-muted-foreground font-medium">Create Organization</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
       </SidebarMenuItem>
     </SidebarMenu>
   )

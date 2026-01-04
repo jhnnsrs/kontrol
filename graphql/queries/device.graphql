@@ -9,6 +9,6 @@ query ListDevices(
 
 query GetDevice($id: ID!) {
   device(id: $id) {
-    ...Device
+    ...DetailDevice
   }
 }

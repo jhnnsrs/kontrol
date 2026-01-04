@@ -1,9 +1,9 @@
 import { Outlet } from 'react-router-dom'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList } from "./ui/breadcrumb"
 import { Separator } from "./ui/separator"
 import { AppSidebar } from "./app-sidebar"
 import { ErrorBoundary } from './ErrorBoundary'
+import { RouteBreadcrumbs } from './RouteBreadcrumbs'
 
 export default function RootLayout() {
 
@@ -19,15 +19,7 @@ export default function RootLayout() {
                   orientation="vertical"
                   className="mr-2 data-[orientation=vertical]:h-4"
                 />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="/">
-                        Home
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
+                <RouteBreadcrumbs />
               </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
@@ -56,15 +48,7 @@ export const ErrorLayout = ({ children }: { children: React.ReactNode }) => {
                   orientation="vertical"
                   className="mr-2 data-[orientation=vertical]:h-4"
                 />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="/">
-                        Home
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
+                <RouteBreadcrumbs />
               </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

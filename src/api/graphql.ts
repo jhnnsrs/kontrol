@@ -35,6 +35,11 @@ export type AcceptInviteInput = {
   token: Scalars['String']['input'];
 };
 
+export type AddDeviceToGroupInput = {
+  device: Scalars['ID']['input'];
+  deviceGroup: Scalars['ID']['input'];
+};
+
 /** App(id, name, identifier, logo) */
 export type AppFilter = {
   AND?: InputMaybe<AppFilter>;
@@ -67,6 +72,11 @@ export type CreateAliasInput = {
   serviceInstance: Scalars['ID']['input'];
 };
 
+export type CreateDeviceGroupInput = {
+  name: Scalars['String']['input'];
+  organization: Scalars['ID']['input'];
+};
+
 export type CreateInviteInput = {
   expiresInDays?: InputMaybe<Scalars['Int']['input']>;
   organization?: InputMaybe<Scalars['ID']['input']>;
@@ -87,6 +97,10 @@ export type DeclineInviteInput = {
 };
 
 export type DeleteAliasInput = {
+  id: Scalars['ID']['input'];
+};
+
+export type DeleteDeviceGroupInput = {
   id: Scalars['ID']['input'];
 };
 
@@ -259,18 +273,11 @@ export type ManagementDeviceGroup = {
   __typename?: 'ManagementDeviceGroup';
   /** The description of the device group. */
   description?: Maybe<Scalars['String']['output']>;
-  /** The compute nodes that belong to this device group. */
-  devices: Array<ManagementDevice>;
+  /** The number of devices in this device group. */
+  devices: Array<Array<ManagementDevice>>;
   id: Scalars['ID']['output'];
   /** The name of the device group. */
   name: Scalars['String']['output'];
-};
-
-
-/** A DeviceGroup is a group of compute nodes that can be used to run clients. DeviceGroups can be used to group compute nodes by location, hardware type, or any other criteria. */
-export type ManagementDeviceGroupDevicesArgs = {
-  filters?: InputMaybe<DeviceFilter>;
-  pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
 /**
@@ -726,6 +733,10 @@ export type ManagementUsedAlias = {
   client: ManagementClient;
   id: Scalars['ID']['output'];
   key: Scalars['String']['output'];
+  /** If the alias is not valid, the reason why it is not valid. */
+  reason?: Maybe<Scalars['String']['output']>;
+  /** Is the alias valid for the client? */
+  valid: Scalars['Boolean']['output'];
 };
 
 /**
@@ -831,15 +842,18 @@ export type Mutation = {
   __typename?: 'Mutation';
   acceptDeviceCode: ManagementClient;
   acceptInvite: ManagementMembership;
+  addDeviceToGroup: ManagementDevice;
   cancelInvite: ManagementInvite;
   changeOrganizationOwner: ManagementOrganization;
   createAlias: ManagementInstanceAlias;
+  createDeviceGroup: ManagementDeviceGroup;
   createInvite: ManagementInvite;
   createOrganization: ManagementOrganization;
   declineDeviceCode: ManagementDeviceCode;
   /** Decline an invite to join an organization. */
   declineInvite: ManagementInvite;
   deleteAlias: Scalars['ID']['output'];
+  deleteDeviceGroup: Scalars['ID']['output'];
 };
 
 
@@ -850,6 +864,11 @@ export type MutationAcceptDeviceCodeArgs = {
 
 export type MutationAcceptInviteArgs = {
   input: AcceptInviteInput;
+};
+
+
+export type MutationAddDeviceToGroupArgs = {
+  input: AddDeviceToGroupInput;
 };
 
 
@@ -866,6 +885,11 @@ export type MutationChangeOrganizationOwnerArgs = {
 
 export type MutationCreateAliasArgs = {
   input: CreateAliasInput;
+};
+
+
+export type MutationCreateDeviceGroupArgs = {
+  input: CreateDeviceGroupInput;
 };
 
 
@@ -891,6 +915,11 @@ export type MutationDeclineInviteArgs = {
 
 export type MutationDeleteAliasArgs = {
   input: DeleteAliasInput;
+};
+
+
+export type MutationDeleteDeviceGroupArgs = {
+  input: DeleteDeviceGroupInput;
 };
 
 export type OffsetPaginationInput = {
@@ -1188,25 +1217,27 @@ export type _Service = {
   sdl: Scalars['String']['output'];
 };
 
-export type InstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } };
+export type InstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string } };
 
-export type ListInstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } };
+export type ListInstanceAliasFragment = { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } };
 
 export type DetailAppFragment = { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, releases: Array<{ __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
 
 export type ListAppFragment = { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
-export type DetailClientFragment = { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> };
+export type DetailClientFragment = { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> };
 
 export type ListClientFragment = { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } };
 
 export type DeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
 
+export type DetailDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
+
 export type ListDeviceFragment = { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string };
 
 export type DeviceCodeFragment = { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null };
 
-export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> };
+export type DetailDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }>> };
 
 export type ListDeviceGroupFragment = { __typename?: 'ManagementDeviceGroup', id: string, name: string };
 
@@ -1238,15 +1269,15 @@ export type ListServiceFragment = { __typename?: 'ManagementService', identifier
 
 export type ServiceFragment = { __typename?: 'ManagementService', identifier: any, id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }> };
 
-export type ServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
+export type ServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
 export type ListServiceInstanceFragment = { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> };
 
 export type ListServiceInstanceMappingFragment = { __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
 
-export type ListUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
+export type ListUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null };
 
-export type DetailUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
+export type DetailUsedAliasFragment = { __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } };
 
 export type ListUserFragment = { __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
@@ -1259,7 +1290,7 @@ export type CreateAliasMutationVariables = Exact<{
 }>;
 
 
-export type CreateAliasMutation = { __typename?: 'Mutation', createAlias: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } };
+export type CreateAliasMutation = { __typename?: 'Mutation', createAlias: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string } } };
 
 export type DeleteAliasMutationVariables = Exact<{
   input: DeleteAliasInput;
@@ -1273,7 +1304,7 @@ export type AcceptDeviceCodeMutationVariables = Exact<{
 }>;
 
 
-export type AcceptDeviceCodeMutation = { __typename?: 'Mutation', acceptDeviceCode: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
+export type AcceptDeviceCodeMutation = { __typename?: 'Mutation', acceptDeviceCode: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
 
 export type DeclineDeviceCodeMutationVariables = Exact<{
   input: DeclineDeviceCodeInput;
@@ -1281,6 +1312,27 @@ export type DeclineDeviceCodeMutationVariables = Exact<{
 
 
 export type DeclineDeviceCodeMutation = { __typename?: 'Mutation', declineDeviceCode: { __typename?: 'ManagementDeviceCode', id: string, code: string, stagingKind: string, stagingManifest?: { __typename?: 'ManagementStagingManifest', identifier: string, version: string, logo?: string | null, description?: string | null, url?: string | null } | null, client?: { __typename?: 'ManagementClient', id: string, kind: string, name: string, release: { __typename?: 'ManagementRelease', version: any, scopes: Array<string>, app: { __typename?: 'ManagementApp', identifier: any } } } | null } };
+
+export type CreateDeviceGroupMutationVariables = Exact<{
+  input: CreateDeviceGroupInput;
+}>;
+
+
+export type CreateDeviceGroupMutation = { __typename?: 'Mutation', createDeviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }>> } };
+
+export type DeleteDeviceGroupMutationVariables = Exact<{
+  input: DeleteDeviceGroupInput;
+}>;
+
+
+export type DeleteDeviceGroupMutation = { __typename?: 'Mutation', deleteDeviceGroup: string };
+
+export type AddDeviceToGroupMutationVariables = Exact<{
+  input: AddDeviceToGroupInput;
+}>;
+
+
+export type AddDeviceToGroupMutation = { __typename?: 'Mutation', addDeviceToGroup: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> } };
 
 export type CreateInviteMutationVariables = Exact<{
   input: CreateInviteInput;
@@ -1338,7 +1390,7 @@ export type DetailClientQueryVariables = Exact<{
 }>;
 
 
-export type DetailClientQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
+export type DetailClientQuery = { __typename?: 'Query', client: { __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> } };
 
 export type ListDevicesQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -1353,7 +1405,7 @@ export type GetDeviceQueryVariables = Exact<{
 }>;
 
 
-export type GetDeviceQuery = { __typename?: 'Query', device: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> } };
+export type GetDeviceQuery = { __typename?: 'Query', device: { __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string, clients: Array<{ __typename?: 'ManagementClient', id: string, token: string, name: string, functional: boolean, kind: string, issueUrl?: string | null, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, release: { __typename?: 'ManagementRelease', id: string, version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }>, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, publicSources: Array<{ __typename?: 'ManagementPublicSource', kind: string, url: string }> }>, deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> } };
 
 export type DeviceCodeByCodeQueryVariables = Exact<{
   code: Scalars['String']['input'];
@@ -1370,20 +1422,20 @@ export type ValidateDeviceCodeQueryVariables = Exact<{
 
 export type ValidateDeviceCodeQuery = { __typename?: 'Query', validateDeviceCode: { __typename?: 'ValidationResult', valid: boolean, reason?: string | null, mappings: Array<{ __typename?: 'PotentialMapping', key: string, serviceInstance?: { __typename?: 'ManagementServiceInstance', id: string, identifier: string } | null }> } };
 
-export type ListDeviceGroupQueryVariables = Exact<{
+export type ListDeviceGroupsQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
   filters?: InputMaybe<DeviceGroupFilter>;
 }>;
 
 
-export type ListDeviceGroupQuery = { __typename?: 'Query', deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
+export type ListDeviceGroupsQuery = { __typename?: 'Query', deviceGroups: Array<{ __typename?: 'ManagementDeviceGroup', id: string, name: string }> };
 
 export type GetDeviceGroupQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }> } };
+export type GetDeviceGroupQuery = { __typename?: 'Query', deviceGroup: { __typename?: 'ManagementDeviceGroup', id: string, name: string, devices: Array<Array<{ __typename?: 'ManagementDevice', id: string, name?: string | null, nodeId: string }>> } };
 
 export type InviteByCodeQueryVariables = Exact<{
   code: Scalars['String']['input'];
@@ -1460,7 +1512,7 @@ export type GetServiceInstanceQueryVariables = Exact<{
 }>;
 
 
-export type GetServiceInstanceQuery = { __typename?: 'Query', serviceInstance: { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
+export type GetServiceInstanceQuery = { __typename?: 'Query', serviceInstance: { __typename?: 'ManagementServiceInstance', identifier: string, id: string, service: { __typename?: 'ManagementService', identifier: any, id: string, description?: string | null, name: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, mappings: Array<{ __typename?: 'ManagementServiceInstanceMapping', id: string, key: string, optional: boolean, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', id: string }, allowedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }>, deniedUsers: Array<{ __typename?: 'ManagementUser', username: string, firstName?: string | null, lastName?: string | null, email?: string | null, avatar?: string | null, id: string, profile: { __typename?: 'ManagementProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }> }, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }>, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } }>, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } };
 
 export type ListServiceInstanceMappingsQueryVariables = Exact<{
   pagination?: InputMaybe<OffsetPaginationInput>;
@@ -1498,14 +1550,14 @@ export type ListUsedAliasesQueryVariables = Exact<{
 }>;
 
 
-export type ListUsedAliasesQuery = { __typename?: 'Query', usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } }> };
+export type ListUsedAliasesQuery = { __typename?: 'Query', usedAliases: Array<{ __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, service: { __typename?: 'ManagementService', identifier: any } } } | null }> };
 
 export type GetUsedAliasQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetUsedAliasQuery = { __typename?: 'Query', usedAlias: { __typename?: 'ManagementUsedAlias', id: string, key: string, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
+export type GetUsedAliasQuery = { __typename?: 'Query', usedAlias: { __typename?: 'ManagementUsedAlias', id: string, key: string, valid: boolean, reason?: string | null, alias?: { __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer: { __typename?: 'ManagementLayer', id: string, name: string }, instance: { __typename?: 'ManagementServiceInstance', id: string } } | null, client: { __typename?: 'ManagementClient', id: string, name: string, kind: string, user?: { __typename?: 'ManagementUser', id: string, username: string } | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, device?: { __typename?: 'ManagementDevice', id: string, name?: string | null } | null, release: { __typename?: 'ManagementRelease', version: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, app: { __typename?: 'ManagementApp', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } } } };
 
 export const ListAppFragmentDoc = gql`
     fragment ListApp on ManagementApp {
@@ -1540,6 +1592,57 @@ export const DetailAppFragmentDoc = gql`
   }
 }
     ${ListReleaseFragmentDoc}`;
+export const ListClientFragmentDoc = gql`
+    fragment ListClient on ManagementClient {
+  id
+  user {
+    id
+    username
+  }
+  logo {
+    presignedUrl
+  }
+  device {
+    id
+    name
+  }
+  name
+  kind
+  release {
+    version
+    logo {
+      presignedUrl
+    }
+    app {
+      id
+      identifier
+      logo {
+        presignedUrl
+      }
+    }
+  }
+}
+    `;
+export const ListDeviceGroupFragmentDoc = gql`
+    fragment ListDeviceGroup on ManagementDeviceGroup {
+  id
+  name
+}
+    `;
+export const DeviceFragmentDoc = gql`
+    fragment Device on ManagementDevice {
+  id
+  name
+  nodeId
+  clients {
+    ...ListClient
+  }
+  deviceGroups {
+    ...ListDeviceGroup
+  }
+}
+    ${ListClientFragmentDoc}
+${ListDeviceGroupFragmentDoc}`;
 export const ProfileFragmentDoc = gql`
     fragment Profile on ManagementProfile {
   id
@@ -1578,37 +1681,6 @@ export const ListServiceInstanceFragmentDoc = gql`
   }
 }
     ${ListUserFragmentDoc}`;
-export const ListClientFragmentDoc = gql`
-    fragment ListClient on ManagementClient {
-  id
-  user {
-    id
-    username
-  }
-  logo {
-    presignedUrl
-  }
-  device {
-    id
-    name
-  }
-  name
-  kind
-  release {
-    version
-    logo {
-      presignedUrl
-    }
-    app {
-      id
-      identifier
-      logo {
-        presignedUrl
-      }
-    }
-  }
-}
-    `;
 export const ListServiceInstanceMappingFragmentDoc = gql`
     fragment ListServiceInstanceMapping on ManagementServiceInstanceMapping {
   id
@@ -1636,21 +1708,26 @@ export const ListInstanceAliasFragmentDoc = gql`
     id
     name
   }
+  instance {
+    id
+    identifier
+    service {
+      identifier
+    }
+  }
 }
     `;
 export const ListUsedAliasFragmentDoc = gql`
     fragment ListUsedAlias on ManagementUsedAlias {
   id
   key
+  valid
+  reason
   alias {
     ...ListInstanceAlias
   }
-  client {
-    ...ListClient
-  }
 }
-    ${ListInstanceAliasFragmentDoc}
-${ListClientFragmentDoc}`;
+    ${ListInstanceAliasFragmentDoc}`;
 export const DetailClientFragmentDoc = gql`
     fragment DetailClient on ManagementClient {
   id
@@ -1687,25 +1764,19 @@ export const DetailClientFragmentDoc = gql`
     ${ListReleaseFragmentDoc}
 ${ListServiceInstanceMappingFragmentDoc}
 ${ListUsedAliasFragmentDoc}`;
-export const ListDeviceGroupFragmentDoc = gql`
-    fragment ListDeviceGroup on ManagementDeviceGroup {
-  id
-  name
-}
-    `;
-export const DeviceFragmentDoc = gql`
-    fragment Device on ManagementDevice {
+export const DetailDeviceFragmentDoc = gql`
+    fragment DetailDevice on ManagementDevice {
   id
   name
   nodeId
   clients {
-    ...ListClient
+    ...DetailClient
   }
   deviceGroups {
     ...ListDeviceGroup
   }
 }
-    ${ListClientFragmentDoc}
+    ${DetailClientFragmentDoc}
 ${ListDeviceGroupFragmentDoc}`;
 export const DeviceCodeFragmentDoc = gql`
     fragment DeviceCode on ManagementDeviceCode {
@@ -1987,12 +2058,17 @@ export const InstanceAliasFragmentDoc = gql`
     id
     name
   }
+  instance {
+    id
+  }
 }
     `;
 export const DetailUsedAliasFragmentDoc = gql`
     fragment DetailUsedAlias on ManagementUsedAlias {
   id
   key
+  valid
+  reason
   alias {
     ...InstanceAlias
   }
@@ -2182,6 +2258,103 @@ export function useDeclineDeviceCodeMutation(baseOptions?: Apollo.MutationHookOp
 export type DeclineDeviceCodeMutationHookResult = ReturnType<typeof useDeclineDeviceCodeMutation>;
 export type DeclineDeviceCodeMutationResult = Apollo.MutationResult<DeclineDeviceCodeMutation>;
 export type DeclineDeviceCodeMutationOptions = Apollo.BaseMutationOptions<DeclineDeviceCodeMutation, DeclineDeviceCodeMutationVariables>;
+export const CreateDeviceGroupDocument = gql`
+    mutation CreateDeviceGroup($input: CreateDeviceGroupInput!) {
+  createDeviceGroup(input: $input) {
+    ...DetailDeviceGroup
+  }
+}
+    ${DetailDeviceGroupFragmentDoc}`;
+export type CreateDeviceGroupMutationFn = Apollo.MutationFunction<CreateDeviceGroupMutation, CreateDeviceGroupMutationVariables>;
+
+/**
+ * __useCreateDeviceGroupMutation__
+ *
+ * To run a mutation, you first call `useCreateDeviceGroupMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateDeviceGroupMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createDeviceGroupMutation, { data, loading, error }] = useCreateDeviceGroupMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateDeviceGroupMutation(baseOptions?: Apollo.MutationHookOptions<CreateDeviceGroupMutation, CreateDeviceGroupMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateDeviceGroupMutation, CreateDeviceGroupMutationVariables>(CreateDeviceGroupDocument, options);
+      }
+export type CreateDeviceGroupMutationHookResult = ReturnType<typeof useCreateDeviceGroupMutation>;
+export type CreateDeviceGroupMutationResult = Apollo.MutationResult<CreateDeviceGroupMutation>;
+export type CreateDeviceGroupMutationOptions = Apollo.BaseMutationOptions<CreateDeviceGroupMutation, CreateDeviceGroupMutationVariables>;
+export const DeleteDeviceGroupDocument = gql`
+    mutation DeleteDeviceGroup($input: DeleteDeviceGroupInput!) {
+  deleteDeviceGroup(input: $input)
+}
+    `;
+export type DeleteDeviceGroupMutationFn = Apollo.MutationFunction<DeleteDeviceGroupMutation, DeleteDeviceGroupMutationVariables>;
+
+/**
+ * __useDeleteDeviceGroupMutation__
+ *
+ * To run a mutation, you first call `useDeleteDeviceGroupMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteDeviceGroupMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteDeviceGroupMutation, { data, loading, error }] = useDeleteDeviceGroupMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteDeviceGroupMutation(baseOptions?: Apollo.MutationHookOptions<DeleteDeviceGroupMutation, DeleteDeviceGroupMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteDeviceGroupMutation, DeleteDeviceGroupMutationVariables>(DeleteDeviceGroupDocument, options);
+      }
+export type DeleteDeviceGroupMutationHookResult = ReturnType<typeof useDeleteDeviceGroupMutation>;
+export type DeleteDeviceGroupMutationResult = Apollo.MutationResult<DeleteDeviceGroupMutation>;
+export type DeleteDeviceGroupMutationOptions = Apollo.BaseMutationOptions<DeleteDeviceGroupMutation, DeleteDeviceGroupMutationVariables>;
+export const AddDeviceToGroupDocument = gql`
+    mutation AddDeviceToGroup($input: AddDeviceToGroupInput!) {
+  addDeviceToGroup(input: $input) {
+    ...Device
+  }
+}
+    ${DeviceFragmentDoc}`;
+export type AddDeviceToGroupMutationFn = Apollo.MutationFunction<AddDeviceToGroupMutation, AddDeviceToGroupMutationVariables>;
+
+/**
+ * __useAddDeviceToGroupMutation__
+ *
+ * To run a mutation, you first call `useAddDeviceToGroupMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddDeviceToGroupMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addDeviceToGroupMutation, { data, loading, error }] = useAddDeviceToGroupMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAddDeviceToGroupMutation(baseOptions?: Apollo.MutationHookOptions<AddDeviceToGroupMutation, AddDeviceToGroupMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<AddDeviceToGroupMutation, AddDeviceToGroupMutationVariables>(AddDeviceToGroupDocument, options);
+      }
+export type AddDeviceToGroupMutationHookResult = ReturnType<typeof useAddDeviceToGroupMutation>;
+export type AddDeviceToGroupMutationResult = Apollo.MutationResult<AddDeviceToGroupMutation>;
+export type AddDeviceToGroupMutationOptions = Apollo.BaseMutationOptions<AddDeviceToGroupMutation, AddDeviceToGroupMutationVariables>;
 export const CreateInviteDocument = gql`
     mutation CreateInvite($input: CreateInviteInput!) {
   createInvite(input: $input) {
@@ -2537,10 +2710,10 @@ export type ListDevicesQueryResult = Apollo.QueryResult<ListDevicesQuery, ListDe
 export const GetDeviceDocument = gql`
     query GetDevice($id: ID!) {
   device(id: $id) {
-    ...Device
+    ...DetailDevice
   }
 }
-    ${DeviceFragmentDoc}`;
+    ${DetailDeviceFragmentDoc}`;
 
 /**
  * __useGetDeviceQuery__
@@ -2672,8 +2845,8 @@ export type ValidateDeviceCodeQueryHookResult = ReturnType<typeof useValidateDev
 export type ValidateDeviceCodeLazyQueryHookResult = ReturnType<typeof useValidateDeviceCodeLazyQuery>;
 export type ValidateDeviceCodeSuspenseQueryHookResult = ReturnType<typeof useValidateDeviceCodeSuspenseQuery>;
 export type ValidateDeviceCodeQueryResult = Apollo.QueryResult<ValidateDeviceCodeQuery, ValidateDeviceCodeQueryVariables>;
-export const ListDeviceGroupDocument = gql`
-    query ListDeviceGroup($pagination: OffsetPaginationInput, $filters: DeviceGroupFilter) {
+export const ListDeviceGroupsDocument = gql`
+    query ListDeviceGroups($pagination: OffsetPaginationInput, $filters: DeviceGroupFilter) {
   deviceGroups(pagination: $pagination, filters: $filters) {
     ...ListDeviceGroup
   }
@@ -2681,41 +2854,41 @@ export const ListDeviceGroupDocument = gql`
     ${ListDeviceGroupFragmentDoc}`;
 
 /**
- * __useListDeviceGroupQuery__
+ * __useListDeviceGroupsQuery__
  *
- * To run a query within a React component, call `useListDeviceGroupQuery` and pass it any options that fit your needs.
- * When your component renders, `useListDeviceGroupQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useListDeviceGroupsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListDeviceGroupsQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useListDeviceGroupQuery({
+ * const { data, loading, error } = useListDeviceGroupsQuery({
  *   variables: {
  *      pagination: // value for 'pagination'
  *      filters: // value for 'filters'
  *   },
  * });
  */
-export function useListDeviceGroupQuery(baseOptions?: Apollo.QueryHookOptions<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>) {
+export function useListDeviceGroupsQuery(baseOptions?: Apollo.QueryHookOptions<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>(ListDeviceGroupDocument, options);
+        return Apollo.useQuery<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>(ListDeviceGroupsDocument, options);
       }
-export function useListDeviceGroupLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>) {
+export function useListDeviceGroupsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>(ListDeviceGroupDocument, options);
+          return Apollo.useLazyQuery<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>(ListDeviceGroupsDocument, options);
         }
 // @ts-ignore
-export function useListDeviceGroupSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>): Apollo.UseSuspenseQueryResult<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>;
-export function useListDeviceGroupSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>): Apollo.UseSuspenseQueryResult<ListDeviceGroupQuery | undefined, ListDeviceGroupQueryVariables>;
-export function useListDeviceGroupSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>) {
+export function useListDeviceGroupsSuspenseQuery(baseOptions?: Apollo.SuspenseQueryHookOptions<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>): Apollo.UseSuspenseQueryResult<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>;
+export function useListDeviceGroupsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>): Apollo.UseSuspenseQueryResult<ListDeviceGroupsQuery | undefined, ListDeviceGroupsQueryVariables>;
+export function useListDeviceGroupsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>(ListDeviceGroupDocument, options);
+          return Apollo.useSuspenseQuery<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>(ListDeviceGroupsDocument, options);
         }
-export type ListDeviceGroupQueryHookResult = ReturnType<typeof useListDeviceGroupQuery>;
-export type ListDeviceGroupLazyQueryHookResult = ReturnType<typeof useListDeviceGroupLazyQuery>;
-export type ListDeviceGroupSuspenseQueryHookResult = ReturnType<typeof useListDeviceGroupSuspenseQuery>;
-export type ListDeviceGroupQueryResult = Apollo.QueryResult<ListDeviceGroupQuery, ListDeviceGroupQueryVariables>;
+export type ListDeviceGroupsQueryHookResult = ReturnType<typeof useListDeviceGroupsQuery>;
+export type ListDeviceGroupsLazyQueryHookResult = ReturnType<typeof useListDeviceGroupsLazyQuery>;
+export type ListDeviceGroupsSuspenseQueryHookResult = ReturnType<typeof useListDeviceGroupsSuspenseQuery>;
+export type ListDeviceGroupsQueryResult = Apollo.QueryResult<ListDeviceGroupsQuery, ListDeviceGroupsQueryVariables>;
 export const GetDeviceGroupDocument = gql`
     query GetDeviceGroup($id: ID!) {
   deviceGroup(id: $id) {

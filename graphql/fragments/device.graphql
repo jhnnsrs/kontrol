@@ -10,6 +10,18 @@ fragment Device on ManagementDevice {
   }
 }
 
+fragment DetailDevice on ManagementDevice {
+  id
+  name
+  nodeId
+  clients {
+    ...DetailClient
+  }
+  deviceGroups {
+    ...ListDeviceGroup
+  }
+}
+
 fragment ListDevice on ManagementDevice {
   id
   name

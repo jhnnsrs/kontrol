@@ -1,17 +1,18 @@
 fragment ListUsedAlias on ManagementUsedAlias {
   id
   key
+  valid
+  reason
   alias {
     ...ListInstanceAlias
-  }
-  client {
-    ...ListClient
   }
 }
 
 fragment DetailUsedAlias on ManagementUsedAlias {
   id
   key
+  valid 
+  reason
   alias {
     ...InstanceAlias
   }

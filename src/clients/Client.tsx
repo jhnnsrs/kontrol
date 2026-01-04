@@ -34,7 +34,7 @@ export default function Client() {
                 <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <CardTitle className="text-2xl">{client.name}</CardTitle>
+                <CardTitle className="text-2xl">{client.name || "Unnamed Client"}</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{client.kind}</Badge>
                     <span className="text-muted-foreground">by {client.user?.username}</span>
@@ -61,12 +61,12 @@ export default function Client() {
                 )}
 
                 {client.device && (
-                    <div>
+                    <Link to={`/devices/${client.device.id}`}>
                         <h3 className="font-semibold mb-2">Device</h3>
                         <div className="p-2 border rounded-md">
-                            <div className="font-medium">{client.device.name}</div>
+                            <div className="font-medium">{client.device.name || "Unnamed Device"}</div>
                         </div>
-                    </div>
+                    </Link>
                 )}
 
                 <div>

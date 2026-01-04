@@ -26,7 +26,6 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
-import { CreateOrganizationDialog } from "@/components/CreateOrganizationDialog"
 import {
   Sidebar,
   SidebarContent,
@@ -36,14 +35,15 @@ import {
 } from "@/components/ui/sidebar"
 import { useUser, useConfig } from '../auth'
 import { useListOrganizationsQuery, useMeQuery, useListServicesQuery } from "@/api/graphql"
+import { useParams } from "react-router-dom"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useUser()
   const config = useConfig()
+  const { id: orgId } = useParams<{ id: string }>()
   const { data: orgData } = useListOrganizationsQuery({ skip: !user })
   const { data: meData } = useMeQuery({ skip: !user })
   const { data: servicesData } = useListServicesQuery({ skip: !user })
-  const [createOrgOpen, setCreateOrgOpen] = React.useState(false)
 
   const organizations = orgData?.organizations.map(org => ({
     name: org.name,
@@ -76,19 +76,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: Building2,
       items: [
         {
-          title: "Organizations",
-          url: "/",
+          title: "Organization",
+          url: orgId ? `/organization/${orgId}` : "/",
         },
         {
           title: "Members",
-          url: "/members",
+          url: orgId ? `/organization/${orgId}/members` : "#",
+        },
+        {
+          title: "Invites",
+          url: orgId ? `/organization/${orgId}/invites` : "#",
+        },
+        {
+          title: "Danger Zone",
+          url: orgId ? `/organization/${orgId}/danger-zone` : "#",
         },
       ],
-      action: {
-        icon: Plus,
-        onClick: () => setCreateOrgOpen(true),
-        tooltip: "Create Organization",
-      },
     },
     {
       title: "Apps",
@@ -111,6 +114,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Devices",
           url: "/devices",
         },
+        {
+          title: "Device Groups",
+          url: orgId ? `/organization/${orgId}/devices/groups` : "#",
+        },
       ],
     },
     {
@@ -128,11 +135,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/service-instance-mappings",
         },
       ],
-      action: {
-        icon: Plus,
-        onClick: () => {}, // TODO: Implement register service
-        tooltip: "Register Service",
-      },
     },
   ] : [
     {
@@ -184,7 +186,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {user && <NavUser user={userData} />}
       </SidebarFooter>
       <SidebarRail />
-      <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} />
     </Sidebar>
   )
 }

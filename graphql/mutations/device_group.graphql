@@ -1,0 +1,18 @@
+mutation CreateDeviceGroup($input: CreateDeviceGroupInput!) {
+  createDeviceGroup(input: $input) {
+    ...DetailDeviceGroup
+  }
+}
+
+
+mutation DeleteDeviceGroup($input: DeleteDeviceGroupInput!) {
+  deleteDeviceGroup(input: $input) 
+    
+}
+
+
+mutation AddDeviceToGroup($input: AddDeviceToGroupInput!) {
+  addDeviceToGroup(input: $input) {
+    ...Device
+  }
+}

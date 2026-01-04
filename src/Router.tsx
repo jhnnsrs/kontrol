@@ -22,6 +22,8 @@ import Apps from './apps/Apps'
 import App from './apps/App'
 import Devices from './devices/Devices'
 import Device from './devices/Device'
+import DeviceGroups from './devices/DeviceGroups'
+import DeviceGroup from './devices/DeviceGroup'
 import ChangeEmail from './account/ChangeEmail'
 import ChangePassword from './account/ChangePassword'
 import PasswordChangeSuccess from './account/PasswordChangeSuccess'
@@ -61,6 +63,9 @@ import ProviderSignup from './socialaccount/ProviderSignup'
 import Sessions from './usersessions/Sessions'
 import { ConfigurePage, } from './device/ConfigurePage'
 import { InvitePage } from './invite/InvitePage'
+import Members from './members/Members'
+import Invites from './invite/Invites'
+import DangerZone from './organization/DangerZone'
 
 
 function RouterErrorBoundary() {
@@ -159,6 +164,26 @@ function createRouter () {
         {
           path: '/organization/:id',
           element: <AuthenticatedRoute><Organization /></AuthenticatedRoute>
+        },
+        {
+          path: '/organization/:id/members',
+          element: <AuthenticatedRoute><Members /></AuthenticatedRoute>
+        },
+        {
+          path: '/organization/:id/invites',
+          element: <AuthenticatedRoute><Invites /></AuthenticatedRoute>
+        },
+        {
+          path: '/organization/:id/danger-zone',
+          element: <AuthenticatedRoute><DangerZone /></AuthenticatedRoute>
+        },
+        {
+          path: '/organization/:id/devices/groups',
+          element: <AuthenticatedRoute><DeviceGroups /></AuthenticatedRoute>
+        },
+        {
+          path: '/organization/:id/devices/groups/:groupId',
+          element: <AuthenticatedRoute><DeviceGroup /></AuthenticatedRoute>
         },
         {
           path: '/profile',

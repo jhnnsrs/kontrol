@@ -28,14 +28,14 @@ export const AliasChallenge = ({ alias }: AliasChallengeProps) => {
         const hostname = window.location.hostname;
         const port = window.location.port ? `:${window.location.port}` : "";
         const path = alias.path || "";
-        challengeUrl = `${protocol}//${hostname}${port}${path}${alias.challenge}`;
+        challengeUrl = `${protocol}//${hostname}${port}/${path}${alias.challenge}`;
       } else {
         // Absolute URL: use alias configuration
         const protocol = alias.ssl ? "https" : "http";
         const host = alias.host;
         const port = alias.port ? `:${alias.port}` : "";
         const path = alias.path || "";
-        challengeUrl = `${protocol}://${host}${port}${path}${alias.challenge}`;
+        challengeUrl = `${protocol}://${host}${port}/${path}${alias.challenge}`;
       }
 
       const response = await fetch(challengeUrl, {
