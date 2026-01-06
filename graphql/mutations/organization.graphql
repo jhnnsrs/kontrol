@@ -12,3 +12,13 @@ mutation UpdateOrganization(
     ...Organization
   }
 }
+
+mutation DeleteOrganization($input: DeleteOrganizationInput!) {
+  deleteOrganization(input: $input) 
+}
+
+mutation ChangeOrganizationOwner($organizationId: ID!, $newOwnerId: ID!) {
+  changeOrganizationOwner(organizationId: $organizationId, newOwnerId: $newOwnerId) {
+    ...Organization
+  }
+}

@@ -3,18 +3,7 @@ import { useParams, Link } from "react-router-dom"
 import { useListDeviceGroupsQuery, useCreateDeviceGroupMutation, useDeleteDeviceGroupMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Folder, Plus, Trash2 } from "lucide-react"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog"
+import { Plus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -27,16 +16,20 @@ import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 
 export default function DeviceGroups() {
-  const { id: orgId } = useParams<{ id: string }>()
+  const { orgId } = useParams<{ orgId: string }>()
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [groupName, setGroupName] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   
-  const { data, loading, error } = useListDeviceGroupsQuery({})
+  const { data, loading, error } = useListDeviceGroupsQuery({
+    variables: {
+        filters: {
+            organization: orgId
+        }
+    }
+  })
   const [createDeviceGroup] = useCreateDeviceGroupMutation()
-  const [deleteDeviceGroup] = useDeleteDeviceGroupMutation()
 
   const deviceGroups = data?.deviceGroups || []
 
@@ -64,147 +57,73 @@ export default function DeviceGroups() {
     }
   }
 
-  const handleDeleteGroup = async (groupId: string) => {
-    try {
-      setDeleteError(null)
-      await deleteDeviceGroup({
-        variables: { 
-          input: { 
-            id: groupId
-          }
-        },
-        refetchQueries: ['ListDeviceGroups']
-      })
-    } catch (err) {
-      console.error("Failed to delete device group:", err)
-      setDeleteError(err instanceof Error ? err.message : "Failed to delete device group")
-    }
-  }
-
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-  if (!orgId) return <div>Organization not found</div>
+  if (loading) return <div className="p-4">Loading...</div>
+  if (error) return <div className="p-4">Error: {error.message}</div>
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Device Groups</h1>
-          <p className="text-muted-foreground mt-1">
-            Organize devices into groups for easier management
-          </p>
-        </div>
+    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Device Groups</h2>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Create Group
+              New Group
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Device Group</DialogTitle>
               <DialogDescription>
-                Create a new device group to organize your devices.
+                Create a new group to organize your devices.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="group-name">Group Name</Label>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
                 <Input
-                  id="group-name"
-                  placeholder="e.g., Production Devices, Testing"
+                  id="name"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && groupName.trim()) {
-                      handleCreateGroup()
-                    }
-                  }}
+                  placeholder="e.g. Production Devices"
                 />
               </div>
               {createError && (
-                <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
-                  {createError}
-                </div>
+                <p className="text-sm text-destructive">{createError}</p>
               )}
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateGroup}
-                disabled={!groupName.trim() || isCreating}
-              >
-                {isCreating ? "Creating..." : "Create"}
+            <div className="flex justify-end">
+              <Button onClick={handleCreateGroup} disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Group"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {deviceGroups.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Folder className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground text-center">
-              No device groups yet. Create your first group to get started.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {deviceGroups.map(group => (
-            <Card key={group.id} className="hover:shadow-md transition-all">
-              <Link to={`/organization/${orgId}/devices/groups/${group.id}`} className="no-underline">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg hover:text-primary transition-colors">{group.name}</CardTitle>
-                    </div>
-                    <div className="text-muted-foreground flex-shrink-0">
-                      <Folder className="h-5 w-5" />
-                    </div>
-                  </div>
-                </CardHeader>
-              </Link>
-              <CardContent className="space-y-4">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="w-full">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Group
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete "{group.name}"?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. The devices in this group will not be deleted, only the group itself.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteGroup(group.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                    {deleteError && (
-                      <div className="text-sm text-red-500 bg-red-50 p-2 rounded mt-4">
-                        {deleteError}
-                      </div>
-                    )}
-                  </AlertDialogContent>
-                </AlertDialog>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {deviceGroups.map((group) => (
+          <Link key={group.id} to={`/organization/${orgId}/devices/groups/${group.id}`}>
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium truncate">
+                  {group.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-muted-foreground">
+                  {group.devices?.length || 0} devices
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          </Link>
+        ))}
+        {deviceGroups.length === 0 && (
+            <div className="col-span-4 text-center text-muted-foreground">
+                No device groups found.
+            </div>
+        )}
+      </div>
     </div>
   )
 }

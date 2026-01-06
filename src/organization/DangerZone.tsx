@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom"
-import { useOrganizationQuery } from "../api/graphql"
+import { useOrganizationQuery, useDeleteOrganizationMutation, useChangeOrganizationOwnerMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { useState } from "react"
@@ -32,10 +32,16 @@ export default function DangerZone() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedNewOwner, setSelectedNewOwner] = useState("")
   const [isChangingOwner, setIsChangingOwner] = useState(false)
+  
   const { data, loading, error } = useOrganizationQuery({
     variables: { id: orgId! },
     skip: !orgId,
   })
+
+  const [deleteOrganization] = useDeleteOrganizationMutation({
+    refetchQueries: ['ListOrganizations', "Me"]
+  })
+  const [changeOwner] = useChangeOrganizationOwnerMutation()
 
   if (loading) return <div>Loading...</div>
   if (error) return <div>Error: {error.message}</div>
@@ -50,12 +56,14 @@ export default function DangerZone() {
 
     setIsDeleting(true)
     try {
-      // TODO: Implement deleteOrganization mutation
-      // await deleteOrganization({
-      //   variables: { id: org.id }
-      // })
-      console.log("Delete organization:", org.id)
-      // navigate("/")
+      await deleteOrganization({
+        variables: { 
+          input: {
+            id: org.id
+          }
+        }
+      })
+      navigate("/")
     } catch (err) {
       console.error("Failed to delete organization:", err)
       setIsDeleting(false)
@@ -69,14 +77,15 @@ export default function DangerZone() {
 
     setIsChangingOwner(true)
     try {
-      // TODO: Implement changeOrganizationOwner mutation
-      // await changeOwner({
-      //   variables: { 
-      //     organizationId: org.id,
-      //     newOwnerId: selectedNewOwner 
-      //   }
-      // })
-      console.log("Change organization owner:", selectedNewOwner)
+      await changeOwner({
+        variables: { 
+          organizationId: org.id,
+          newOwnerId: selectedNewOwner 
+        }
+      })
+      setIsChangingOwner(false)
+      setSelectedNewOwner("")
+      window.location.reload()
     } catch (err) {
       console.error("Failed to change organization owner:", err)
       setIsChangingOwner(false)

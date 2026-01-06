@@ -35,6 +35,15 @@ fragment DetailClient on ManagementClient {
     kind
     url
   }
+  manifest {
+    ...Manifest
+  }
+
+  scopes {
+    id
+    identifier
+    description
+  }
 }
 
 fragment ListClient on ManagementClient {

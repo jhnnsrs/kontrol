@@ -78,6 +78,10 @@ import ProviderCallback from './socialaccount/ProviderCallback'
 import ProviderSignup from './socialaccount/ProviderSignup'
 import SocialAccount from './socialaccount/SocialAccount'
 import Sessions from './usersessions/Sessions'
+import Role from './roles/Role'
+import Roles from './roles/Roles'
+import Scope from './scopes/Scope'
+import Scopes from './scopes/Scopes'
 
 
 function RouterErrorBoundary() {
@@ -128,15 +132,6 @@ function createRouter () {
             {
               path: '/service-releases/:id',
               element: <AuthenticatedRoute><ServiceRelease /></AuthenticatedRoute>
-            },
-
-            {
-              path: '/service-instances',
-              element: <AuthenticatedRoute><ServiceInstances /></AuthenticatedRoute>
-            },
-            {
-              path: '/service-instances/:id',
-              element: <AuthenticatedRoute><ServiceInstance /></AuthenticatedRoute>
             },
             {
               path: '/service-instance-mappings',
@@ -322,12 +317,36 @@ function createRouter () {
               element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>
             },
             {
+              path: 'devices',
+              element: <AuthenticatedRoute><Devices /></AuthenticatedRoute>
+            },
+            {
+              path: 'devices/:id',
+              element: <AuthenticatedRoute><Device /></AuthenticatedRoute>
+            },
+            {
               path: 'devices/groups',
               element: <AuthenticatedRoute><DeviceGroups /></AuthenticatedRoute>
             },
             {
               path: 'devices/groups/:groupId',
               element: <AuthenticatedRoute><DeviceGroup /></AuthenticatedRoute>
+            },
+            {
+              path: 'scopes',
+              element: <AuthenticatedRoute><Scopes /></AuthenticatedRoute>
+            },
+            {
+              path: 'scopes/:id',
+              element: <AuthenticatedRoute><Scope /></AuthenticatedRoute>
+            },
+            {
+              path: 'roles',
+              element: <AuthenticatedRoute><Roles /></AuthenticatedRoute>
+            },
+            {
+              path: 'roles/:id',
+              element: <AuthenticatedRoute><Role /></AuthenticatedRoute>
             },
           ]
         },

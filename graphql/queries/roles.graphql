@@ -1,0 +1,12 @@
+query Roles($filters: ManagementRoleFilter, $order: ManagementRoleOrder, $pagination: OffsetPaginationInput) {
+  roles(filters: $filters, order: $order, pagination: $pagination) {
+    ...ListRole
+  }
+}
+
+
+query GetRole($id: ID!) {
+  role(id: $id) {
+    ...Role
+  }
+}

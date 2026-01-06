@@ -1,6 +1,6 @@
 query ListUsedAliases(
   $pagination: OffsetPaginationInput
-  $filters: DeviceFilter
+  $filters: ManagementDeviceFilter
 ) {
   usedAliases(pagination: $pagination, filters: $filters) {
     ...ListUsedAlias

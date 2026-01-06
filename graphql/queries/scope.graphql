@@ -1,0 +1,12 @@
+query Scopes($filters: ManagementScopeFilter, $order: ManagementScopeOrder, $pagination: OffsetPaginationInput) {
+  scopes(filters: $filters, order: $order, pagination: $pagination) {
+    ...ListScope
+  }
+}
+
+
+query DeteilScope($id: ID!) {
+  scope(id: $id) {
+    ...Scope
+  }
+}

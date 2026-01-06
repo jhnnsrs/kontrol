@@ -24,6 +24,7 @@ interface AutoLogoProps {
   className?: string;
   style?: React.CSSProperties;
   theme?: 'light' | 'dark';
+size?: number;
 }
 
 // --- Shape Sub-Component ---
@@ -87,6 +88,7 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
   manifest, 
   className, 
   style, 
+  size = 9 ,
   theme = 'light' 
 }) => {
   const isDark = theme === 'dark';
@@ -122,15 +124,27 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
         width: '100%', 
         height: '100%', 
         position: 'relative',
-        background: isDark ? '#050505' : '#f0f0f0', 
+        background: 'transparent',
         transition: 'background 0.3s ease',
         borderRadius: '12px',
         overflow: 'hidden',
         ...style 
       }}
     >
-      <Canvas gl={{ antialias: false }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+      {/* Vignette Overlay */}
+      <div 
+        style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: isDark 
+                ? 'radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%)' 
+                : 'radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.1) 100%)',
+            pointerEvents: 'none',
+            zIndex: 10
+        }} 
+      />
+      <Canvas gl={{ antialias: false, alpha: true }}>
+        <PerspectiveCamera makeDefault position={[0, 0, size]} />
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={0.5} />
         <Environment preset={isDark ? "night" : "city"} />
@@ -155,7 +169,6 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
                 height={300} 
                 intensity={isDark ? 1.5 : 0.8} 
             />
-            <ChromaticAberration offset={[THREE.Vector2, THREE.Vector2] as any} radialModulation={false} modulationOffset={0} />
             <Noise opacity={0.02} />
         </EffectComposer>
       </Canvas>

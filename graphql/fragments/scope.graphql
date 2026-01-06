@@ -1,0 +1,17 @@
+fragment Scope on ManagementScope {
+  id
+  description
+  identifier
+  creatingInstance {
+   ...ListServiceInstance
+  }
+  organization {
+    id
+  }
+}
+
+fragment ListScope on ManagementScope {
+  id
+  description
+  identifier
+}

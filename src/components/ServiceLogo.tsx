@@ -22,9 +22,10 @@ interface ServiceLogoProps {
   className?: string;
   style?: React.CSSProperties;
   theme?: 'light' | 'dark';
+  size?: number;
 }
 
-const SinglePoly: React.FC<{ type: PolyType; color: string }> = ({ type, color }) => {
+const SinglePoly: React.FC<{ type: PolyType; color: string; }> = ({ type, color , }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   
   useFrame((state, delta) => {
@@ -71,6 +72,7 @@ const ServiceLogo: React.FC<ServiceLogoProps> = ({
   service, 
   className, 
   style, 
+  size = 9 ,
   theme = 'light' 
 }) => {
   const isDark = theme === 'dark';
@@ -90,29 +92,37 @@ const ServiceLogo: React.FC<ServiceLogoProps> = ({
         height: '100%', 
         minHeight: '150px', 
         position: 'relative',
-        background: isDark ? '#050505' : '#f0f0f0', 
+        background: 'transparent',
         transition: 'background 0.3s ease',
         borderRadius: '12px',
         overflow: 'hidden',
         ...style 
       }}
     >
-      <Canvas gl={{ antialias: false }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+      {/* Vignette Overlay */}
+      <div 
+        style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 10
+        }} 
+      />
+      <Canvas gl={{ antialias: false, alpha: true }}>
+        <PerspectiveCamera makeDefault position={[0, 0, size]} />
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={0.5} />
         <Environment preset={isDark ? "night" : "city"} />
 
         <SinglePoly type={type} color={color} />
 
-        <EffectComposer disableNormalPass>
+        <EffectComposer>
             <Bloom 
                 luminanceThreshold={0.2} 
                 luminanceSmoothing={0.9} 
                 height={300} 
                 intensity={isDark ? 1.5 : 0.8} 
             />
-            <ChromaticAberration offset={[THREE.Vector2, THREE.Vector2] as any} radialModulation={false} modulationOffset={0} />
             <Noise opacity={0.02} />
         </EffectComposer>
       </Canvas>

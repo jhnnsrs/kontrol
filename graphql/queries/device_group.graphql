@@ -1,8 +1,10 @@
 query ListDeviceGroups(
   $pagination: OffsetPaginationInput
-  $filters: DeviceGroupFilter
+  $filters: ManagementDeviceGroupFilter
+  $order: ManagementDeviceGroupOrder
+
 ) {
-  deviceGroups(pagination: $pagination, filters: $filters) {
+  deviceGroups(pagination: $pagination, filters: $filters, order: $order) {
     ...ListDeviceGroup
   }
 }

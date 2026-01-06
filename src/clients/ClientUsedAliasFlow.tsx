@@ -2,6 +2,7 @@ import { ReactFlow, Position, type Node, type Edge, Handle, type NodeProps, type
 import '@xyflow/react/dist/style.css';
 import { type ListUsedAliasFragment, type ListInstanceAliasFragment, type DetailClientFragment } from '../api/graphql';
 import { useMemo } from 'react';
+import { stringToPaletteColor } from '@/lib/logoUtils';
 
 interface ClientUsedAliasFlowProps {
     client: DetailClientFragment
@@ -86,8 +87,12 @@ const AliasNode = ({ data }: NodeProps) => {
         url = `${alias.ssl ? "https" : "http"}://${alias.host}${alias.port ? `:${alias.port}` : ""}/${alias.path || ""}`;
     }
 
+    const color = stringToPaletteColor(alias.instance.release.service.identifier);
+
     return (
-        <div className="group relative flex flex-col items-start justify-center px-3 py-2 bg-primary/5 backdrop-blur-sm border border-primary/10 rounded-md shadow-sm transition-all hover:border-primary/30 hover:shadow-md min-w-[150px]">
+        <div className="group relative flex flex-col items-start justify-center px-3 py-2 bg-primary/5 backdrop-blur-sm border border-primary/10 rounded-md shadow-sm transition-all hover:border-primary/30 hover:shadow-md min-w-[150px]" style={{
+            borderColor: color
+        }}>
             <Handle type="target" position={Position.Left} className="!bg-primary/20 !w-1.5 !h-1.5 !-left-0.5" />
             <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-1.5">

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
 import { Link } from "react-router-dom"
 import { ClientUsedAliasFlow } from "./ClientUsedAliasFlow"
+import AutoLogo from "@/components/AutoLogo"
 
 export default function Client() {
   const { id } = useParams<{ id: string }>()
@@ -22,10 +23,11 @@ export default function Client() {
   return (
     <div className="container mx-auto py-10 relative min-h-screen">
         {/* Background Flow */}
-        <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none ">
-             <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 w-10" />
-             <ClientUsedAliasFlow client={client || []} />
+        <div className="fixed top-0 right-0 h-screen w-[40vw] z-0 pointer-events-none opacity-100">
+             <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
+             <AutoLogo manifest={client.manifest} theme="dark" size={9}/>
         </div>
+
 
         <div className="relative z-10 max-w-[30vw] space-y-6">
             <CardHeader className="flex flex-row items-center gap-4">
@@ -82,6 +84,25 @@ export default function Client() {
                 )}
 
                 <div>
+                    <h3 className="font-semibold mb-2">Scopes</h3>
+                    <div className="grid gap-2">
+                        {client.scopes?.map(scope => (
+                            <div key={scope.id} className="p-2 border rounded-md">
+                                <div className="font-medium"></div>
+                                 <Link to={`/organization/${client.organization.id}/scopes/${scope.id}`}>{scope.identifier}
+                                </Link>
+                                <div className="text-xs text-muted-foreground">
+                                    {scope.description}
+                                </div>
+                            </div>
+                        ))}
+                        {(!client.usedAliases || client.usedAliases.length === 0) && (
+                            <div className="text-sm text-muted-foreground">No aliases used</div>
+                        )}
+                    </div>
+                </div>
+
+                <div>
                     <h3 className="font-semibold mb-2">Used Aliases</h3>
                     <div className="grid gap-2">
                         {client.usedAliases?.map(usedAlias => (
@@ -91,7 +112,7 @@ export default function Client() {
                                     <Link to={`/instance-aliases/${usedAlias.alias.id}`}>
                                     <code className="text-xs text-muted-foreground">
                                         {usedAlias.alias.ssl ? 'https://' : 'http://'}
-                                        {usedAlias.alias.host || usedAlias.alias.layer.name}
+                                        {usedAlias.alias.host}
                                         {usedAlias.alias.port ? `:${usedAlias.alias.port}` : ''}
                                         {usedAlias.alias.path ? `/${usedAlias.alias.path}` : ''}
                                     </code>

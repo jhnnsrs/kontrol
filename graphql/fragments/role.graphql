@@ -1,0 +1,17 @@
+fragment Role on ManagementRole {
+  id
+  identifier
+  description
+  creatingInstance {
+   ...ListServiceInstance
+  }
+  organization {
+    id
+  }
+}
+
+fragment ListRole on ManagementRole {
+  id
+  description
+  identifier
+}

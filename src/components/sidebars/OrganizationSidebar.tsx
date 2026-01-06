@@ -94,9 +94,30 @@ export function OrganizationSidebar() {
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/devices`)}>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/devices`, true)}>
+                            <Link to={`/organization/${org.id}/devices`}>
+                              <span>Devices</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/devices/groups`)}>
                             <Link to={`/organization/${org.id}/devices/groups`}>
                               <span>Device Groups</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/scopes`)}>
+                            <Link to={`/organization/${org.id}/scopes`}>
+                              <span>Scopes</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/roles`)}>
+                            <Link to={`/organization/${org.id}/roles`}>
+                              <span>Roles</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>

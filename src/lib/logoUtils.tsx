@@ -35,7 +35,7 @@ export const stringToPaletteColor = (str: string): string => {
 export type PolyType = 'icosa' | 'octa' | 'dodeca';
 
 export const getPolyType = (key: string): PolyType => {
-  const types: PolyType[] = ['icosa', 'octa', 'dodeca', 'octa', 'icosa'];
+  const types: PolyType[] = ['icosa', 'octa', 'dodeca'];
   // Using the same hash function for consistency
   const hash = getHash(key);
   return types[hash % types.length];
