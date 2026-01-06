@@ -7,9 +7,6 @@ fragment Organization on ManagementOrganization {
     identifier
     description
   }
-  avatar {
-    presignedUrl
-  }
   memberships {
     id
     roles {
@@ -18,6 +15,7 @@ fragment Organization on ManagementOrganization {
     user {
       id
       username
+      email
       profile {
         id
         avatar {
@@ -26,7 +24,11 @@ fragment Organization on ManagementOrganization {
       }
     }
   }
+  profile {
+    ...OrganizationProfile
+  }
   invites {
+    id
     acceptedBy {
       id
       username
@@ -48,7 +50,38 @@ fragment ListOrganization on ManagementOrganization {
   id
   name
   slug
-  avatar {
-    presignedUrl
+  
+}
+
+
+fragment SidebarOrganization on ManagementOrganization {
+  id
+  name
+  slug
+  profile {
+    ...OrganizationProfile
   }
+  memberships {
+    id
+    roles {
+      identifier
+    }
+    user {
+      id
+      username
+      profile {
+        id
+        avatar {
+          presignedUrl
+        }
+      }
+    }
+  }
+  latestClients: clients(filters: { functional: true }, pagination: { limit: 5 }) {
+    ...ListClient
+  }
+  latestServices: serviceInstances(pagination: { limit: 5 }) {
+    ...ListServiceInstance
+  }
+
 }

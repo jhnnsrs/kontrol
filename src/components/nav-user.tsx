@@ -12,6 +12,9 @@ import {
   Rocket,
   UserCircle,
   Settings,
+  Sun,
+  Moon,
+  Monitor
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -28,6 +31,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
@@ -36,6 +42,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useUser, useConfig } from '../auth'
+import { useTheme } from "@/providers/ThemeProvider"
 
 export function NavUser({
   user,
@@ -49,6 +56,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const currentUser = useUser()
   const config = useConfig()
+  const { setTheme, theme } = useTheme()
 
   if (!currentUser) {
     return (
@@ -122,6 +130,28 @@ export function NavUser({
                   Account Settings
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  {theme === "light" && <Sun />}
+                  {theme === "dark" && <Moon />}
+                  {theme === "system" && <Monitor />}
+                  Theme
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun />
+                    Light
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon />
+                    Dark
+                  </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Monitor />
+                    System
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

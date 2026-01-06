@@ -1,12 +1,5 @@
 query Me {
   me {
-    id
-    username
-    email
-    profile {
-      avatar {
-        presignedUrl
-      }
-    }
+    ...MeUser
   }
 }

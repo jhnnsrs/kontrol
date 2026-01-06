@@ -27,11 +27,14 @@ export default function GoogleOneTap (props: {process: string}) {
   const config = useConfig()
   const [enabled, setEnabled] = useState(() => window.sessionStorage.getItem('googleOneTapEnabled') === 'yes')
   
-  
   function onGoogleOneTapInstalled () {
     const provider = config?.data.socialaccount.providers.find(p => p.id === 'google')
     if (provider && window.google) {
       function handleCredentialResponse (token: {credential: string}) {
+        if (!provider) {
+          console.error('Google provider not found in configuration')
+          return
+        }
         authenticateByToken(provider.id, {
           id_token: token.credential,
           client_id: provider.client_id
@@ -48,7 +51,7 @@ export default function GoogleOneTap (props: {process: string}) {
 
   if (enabled) {
     installGoogleOneTap(onGoogleOneTapInstalled)
-    return <> One Tab enabled</>
+    return <> </>
   }
   function enable () {
     window.sessionStorage.setItem('googleOneTapEnabled', 'yes')

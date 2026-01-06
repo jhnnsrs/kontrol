@@ -2,6 +2,7 @@ import { useConfig } from '../auth'
 import { redirectToProvider, Client, settings, type AuthProcessType } from '../lib/allauth'
 import Button from '../components/Button'
 import GoogleOneTap from './GoogleOneTap'
+import ProviderIcon from '@/components/ProviderIcon'
 
 export default function ProviderList ({callbackURL = "/", process}: { callbackURL?: string, process: AuthProcessType }) {
   const config = useConfig()
@@ -10,17 +11,16 @@ export default function ProviderList ({callbackURL = "/", process}: { callbackUR
     return null
   }
   return (
-    <>
-      <GoogleOneTap process={process} />
-      {settings.client === Client.BROWSER && <ul>
+    <div className="space-y-4 flex flex-col items-center">
+      {settings.client === Client.BROWSER && <>
         {providers.map(provider => {
           return (
-            <li key={provider.id}>
-              <Button onClick={() => redirectToProvider(provider.id, callbackURL, process)}>{provider.name}</Button>
-            </li>
+            <div key={provider.id} className='flex flex-row'>
+              <Button onClick={() => redirectToProvider(provider.id, callbackURL, process)}><ProviderIcon providerId={provider.id} /> Login with {provider.name}</Button>
+            </div>
           )
         })}
-      </ul>}
-    </>
+      </>}
+    </div>
   )
 }

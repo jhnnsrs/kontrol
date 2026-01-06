@@ -10,7 +10,18 @@ fragment ServiceDeviceCode on ManagementServiceDeviceCode {
     version
     logo
     description
-    url
+    roles {
+      key
+      description
+    }
+    scopes {
+      key
+      description
+    }
+    publicSources {
+      kind
+      url
+    }
   }
   instance {
     id

@@ -1,16 +1,20 @@
 import { useParams, Link } from "react-router-dom"
-import { useOrganizationQuery } from "../api/graphql"
+import { useOrganizationQuery, useCancelInviteMutation } from "../api/graphql"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { useState } from "react"
 import { CreateInviteDialog } from "../components/CreateInviteDialog"
+import { toast } from "sonner"
+import { XCircle } from "lucide-react"
 
 export default function Invites() {
-  const { id } = useParams<{ id: string }>()
+  const { orgId } = useParams<{ orgId: string }>()
   const [inviteOpen, setInviteOpen] = useState(false)
-  const { data, loading, error } = useOrganizationQuery({
-    variables: { id: id! },
-    skip: !id,
+  const [cancelInvite] = useCancelInviteMutation()
+  
+  const { data, loading, error, refetch } = useOrganizationQuery({
+    variables: { id: orgId! },
+    skip: !orgId,
   })
 
   if (loading) return <div>Loading...</div>
@@ -18,6 +22,24 @@ export default function Invites() {
   if (!data?.organization) return <div>Organization not found</div>
 
   const org = data.organization
+
+  const handleCancel = async (inviteId: string) => {
+    if (!confirm("Are you sure you want to cancel this invite?")) return
+
+    try {
+      await cancelInvite({
+        variables: {
+          input: {
+            id: inviteId,
+          },
+        },
+      })
+      toast.success("Invite canceled")
+      refetch()
+    } catch (e: any) {
+      toast.error("Failed to cancel invite: " + e.message)
+    }
+  }
 
   return (
     <div className="container mx-auto py-10 space-y-6">
@@ -47,9 +69,10 @@ export default function Invites() {
                 </div>
             )}
             {org.invites?.map(i => (
-                <div
-                  key={i.token}
-                  className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/10"
+                <Link
+                  to={`/invites/${i.id}`}
+                  key={i.id} 
+                  className="flex flex-col gap-4 p-4 border rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1 flex-1">
@@ -69,6 +92,21 @@ export default function Invites() {
                         {i.inviteUrl}
                       </div>
                     </div>
+                    {i.status === "PENDING" && (
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleCancel(i.id)
+                            }}
+                        >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Cancel
+                        </Button>
+                    )}
                   </div>
                   
                   {i.acceptedBy && (
@@ -76,7 +114,7 @@ export default function Invites() {
                         Accepted by <span className="font-medium text-foreground">{i.acceptedBy.username}</span>
                       </div>
                   )}
-                </div>
+                </Link>
             ))}
         </CardContent>
       </Card>

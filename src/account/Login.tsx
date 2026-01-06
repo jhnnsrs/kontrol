@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { login } from '../lib/allauth'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { URLs, useConfig } from '../auth'
 import ProviderList from '../socialaccount/ProviderList'
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import type { AuthFlow } from '@/auth/types'
 import { handleFormErrors } from "@/lib/utils"
 import { useLoginForm } from '@/hooks/use-next'
+import GoogleOneTap from '@/socialaccount/GoogleOneTap'
 
 const formSchema = z.object({
   username: z.string().min(1, "Username/Email is required"),
@@ -54,7 +55,7 @@ export const LoginForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = config.data.socialaccount?.providers?.length > 0
-
+  const next = useSearchParams()[0].get("next") || "/home"
 
 
   const [pendingFlows, setPendingFlows] = useState<AuthFlow[]>([])
@@ -62,7 +63,17 @@ export const LoginForm = () => {
   const {form, onSubmit} = useLoginForm()
 
   return (
-    <Card className="w-full max-w-md">
+    <div className="space-y-6 flex flex-col items-center">
+    
+          
+          {next && next != "/" && (<>
+            <Card className="text-muted-foreground text-xs w-full p-2">
+              <div className="w-full">
+              You will be redirected to <code>{next}</code> after login
+              </div>
+            </Card>
+          </>)}
+    <div className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Login to your account</CardTitle>
         <CardDescription>
@@ -150,7 +161,9 @@ export const LoginForm = () => {
               </div>
             </div>
             <div className="mt-4">
-              <ProviderList callbackURL='/' />
+
+                    <GoogleOneTap process={"login"} />
+              <ProviderList callbackURL={next || "/"} process='login'/>
             </div>
           </div>
         )}
@@ -181,7 +194,8 @@ export const LoginForm = () => {
           </Link>
         </p>
       </CardFooter>
-    </Card>
+    </div>
+    </div>
   )
 }
 

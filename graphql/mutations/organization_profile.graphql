@@ -1,0 +1,14 @@
+mutation CreateOrganizationProfile($input: CreateOrganizationProfileInput!) {
+  createOrganizationProfile(input: $input) {
+    ...OrganizationProfile
+  }
+}
+mutation UpdateOrganizationProfile($input: UpdateOrganizationProfileInput!) {
+  updateOrganizationProfile(input: $input) {
+    ...OrganizationProfile
+  }
+}
+
+mutation DeleteOrganizationProfile($input: DeleteOrganizationProfileInput!) {
+  deleteOrganizationProfile(input: $input) 
+}

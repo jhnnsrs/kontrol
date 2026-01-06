@@ -5,7 +5,14 @@
         }
       }
       const result: PossibleTypesResultData = {
-  "possibleTypes": {}
+  "possibleTypes": {
+    "ManagementSocialAccount": [
+      "ManagementGenericAccount",
+      "ManagementGithubAccount",
+      "ManagementGoogleAccount",
+      "ManagementOrcidAccount"
+    ]
+  }
 };
       export default result;
     

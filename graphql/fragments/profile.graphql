@@ -4,5 +4,8 @@ fragment Profile on ManagementProfile {
   avatar {
     presignedUrl
   }
+  banner {
+    presignedUrl
+  }
   bio
 }

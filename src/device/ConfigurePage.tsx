@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle2, Monitor, Smartphone, Globe, XCircle } from "lucide-react";
+import { DeviceCodeFlow } from "./DeviceCodeFlow";
 
 interface ConfigureFormData {
   organization: string;
@@ -108,7 +109,7 @@ export function ConfigurePage() {
         }
       });
       if (data.data?.acceptDeviceCode?.id){
-        navigate(`/clients/${data.data.acceptDeviceCode.id}`);
+        navigate(`/organization/${data.data.acceptDeviceCode.organization.id}/clients/${data.data.acceptDeviceCode.id}`);
       }
       else {
         setAuthorized(false);
@@ -156,8 +157,17 @@ export function ConfigurePage() {
 
   // Main form
   return (
-    <div className="container max-w-3xl py-8">
-      <div className="space-y-6">
+    <div className="flex flex-row-reverse relative h-full w-full">
+      {/* Background Flow */}
+      <div className="flex-initial right-0 h-full w-[40vw] z-0 pointer-events-none">
+        <DeviceCodeFlow 
+          deviceCode={deviceCode} 
+          validation={validationData?.validateDeviceCode} 
+          className="h-full w-full"
+        />
+      </div>
+
+      <div className="flex-grow space-y-6 w-[40vw]">
         {/* Header */}
         <div className="flex items-start gap-4">
           {deviceCode?.stagingManifest?.logo ? (
@@ -215,7 +225,7 @@ export function ConfigurePage() {
               {deviceCode.client ? "Inherited Permissions" : "Requested Permissions"}
             </p>
             <div className="flex flex-wrap gap-2">
-              {deviceCode.client?.release.scopes.map((scope) => (
+              {deviceCode.stagingManifest?.scopes.map((scope) => (
                 <Badge key={scope} variant="secondary">
                   {scope}
                 </Badge>
@@ -263,7 +273,7 @@ export function ConfigurePage() {
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                 <AlertTitle className="text-green-500">Compatible</AlertTitle>
                 <AlertDescription className="text-green-600 dark:text-green-400">
-                  This app is compatible with your server
+                  This app is compatible with your organisations registered services
                 </AlertDescription>
               </Alert>
             ) : (
@@ -271,33 +281,11 @@ export function ConfigurePage() {
                 <XCircle className="h-4 w-4" />
                 <AlertTitle>Not Compatible</AlertTitle>
                 <AlertDescription>
-                  This app cannot be used with your server
+                  <p className="text-sm text-destructive">• {validationData.validateDeviceCode.reason}</p>
                 </AlertDescription>
               </Alert>
             )}
           </>
-        )}
-
-        {/* Service Mappings */}
-        {validationData?.validateDeviceCode.valid && validationData.validateDeviceCode.mappings.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Service Mappings</p>
-            <ul className="space-y-1">
-              {validationData.validateDeviceCode.mappings.map((mapping) => (
-                <li key={mapping.key} className="text-sm text-muted-foreground">
-                  {mapping.key} → <span className="font-mono text-xs">{mapping.serviceInstance?.identifier}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Errors */}
-        {validationData?.validateDeviceCode && !validationData.validateDeviceCode.valid && validationData.validateDeviceCode.reason && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-destructive">Error</p>
-            <p className="text-sm text-destructive">• {validationData.validateDeviceCode.reason}</p>
-          </div>
         )}
 
         {/* Warning */}

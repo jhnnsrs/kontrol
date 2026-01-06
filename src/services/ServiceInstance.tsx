@@ -34,7 +34,8 @@ import { useState } from "react"
 import { AliasChallenge } from "./AliasChallenge"
 
 export default function ServiceInstance() {
-  const { id } = useParams<{ id: string }>()
+  const params = useParams<{ id: string; instanceId?: string }>()
+  const id = params.instanceId || params.id
   const { data, loading, error } = useGetServiceInstanceQuery({
     variables: { id: id! },
     skip: !id,
@@ -75,14 +76,13 @@ export default function ServiceInstance() {
             <CardHeader className="flex flex-row items-center gap-4">
                 <Avatar className="h-16 w-16">
                     <AvatarImage src={instance.logo?.presignedUrl || undefined} />
-                    <AvatarFallback>{instance.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{instance.release.service.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-2xl">{instance.identifier}</CardTitle>
-                <CardDescription className="font-mono text-sm">{instance.identifier}</CardDescription>
+                <CardTitle className="text-2xl">{instance.release.service.identifier}</CardTitle>
+                <CardDescription className="font-mono text-sm">{instance.release.version}</CardDescription>
                 <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline">{instance.release.service.identifier}</Badge>
-                  <Badge variant="outline">v{instance.release.version}</Badge>
+                  {instance.device && <Badge variant="outline">{instance.device.name}</Badge>}
                 </div>
               </div>
               <div className="flex gap-2">

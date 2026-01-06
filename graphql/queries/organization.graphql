@@ -4,6 +4,12 @@ query Organization($id: ID!) {
   }
 }
 
+query SidebarOrganization($id: ID!) {
+  organization(id: $id) {
+    ...SidebarOrganization
+  }
+}
+
 
 query ListOrganizations($filters: OrganizationFilter, $pagination: OffsetPaginationInput) {
   organizations(filters: $filters, pagination: $pagination) {

@@ -9,11 +9,11 @@ import { Badge } from "@/components/ui/badge"
 
 
 export default function Members() {
-  const { id } = useParams<{ id: string }>()
+  const { orgId } = useParams<{ orgId: string }>()
   const [inviteOpen, setInviteOpen] = useState(false)
   const { data, loading, error } = useOrganizationQuery({
-    variables: { id: id! },
-    skip: !id,
+    variables: { id: orgId! },
+    skip: !orgId,
   })
 
   if (loading) return <div>Loading...</div>

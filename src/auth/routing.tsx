@@ -61,11 +61,10 @@ function navigateToPendingFlow (auth) {
 export function AuthenticatedRoute ({ children }) {
   const location = useLocation()
   const [, status] = useAuthStatus()
-  const next = `next=${encodeURIComponent(location.pathname + location.search)}`
   if (status.isAuthenticated) {
     return children
   } else {
-    return <Navigate to={`${URLs.LOGIN_URL}?${next}`} />
+    return <Navigate to={`${URLs.LOGIN_URL}?next=${encodeURIComponent(location.pathname + location.search)}`} />
   }
 }
 

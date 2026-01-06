@@ -18,3 +18,9 @@ mutation DeclineInvite($input: DeclineInviteInput!) {
     ...Invite
   }
 }
+
+mutation CancelInvite($input: CancelInviteInput!) {
+  cancelInvite(input: $input) {
+    ...Invite
+  }
+}

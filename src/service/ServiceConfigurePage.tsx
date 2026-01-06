@@ -15,6 +15,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, Server, Globe } from "lucide-react";
+import { ServiceDeviceCodeFlow } from "./ServiceDeviceCodeFlow";
 
 interface ConfigureFormData {
   organization: string;
@@ -128,7 +129,7 @@ export function ServiceConfigurePage() {
 
   // Main form
   return (
-    <div className="container max-w-3xl py-8">
+    <div className="container max-w-4xl py-8">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start gap-4">
@@ -148,6 +149,14 @@ export function ServiceConfigurePage() {
               </p>
             )}
           </div>
+        </div>
+
+        <Separator />
+
+        {/* Service Flow Map */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Service Map</h3>
+          <ServiceDeviceCodeFlow serviceDeviceCode={serviceDeviceCode} />
         </div>
 
         <Separator />
@@ -190,28 +199,33 @@ export function ServiceConfigurePage() {
               </a>
             </div>
           )}
-        </div>
-
-        <Separator />
-
-        {/* Service Aliases */}
-        {serviceDeviceCode.stagingAliases && serviceDeviceCode.stagingAliases.length > 0 && (
-          <>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium mb-2">Aliases</p>
-                <div className="flex flex-wrap gap-2">
-                  {serviceDeviceCode.stagingAliases.map((alias, idx) => (
-                    <Badge key={idx} variant="outline">
-                      {alias.host}:{alias.port}
-                    </Badge>
-                  ))}
-                </div>
+          {serviceDeviceCode.stagingManifest?.roles &&  serviceDeviceCode.stagingManifest.roles.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground">Roles</p>
+              <div className="flex flex-wrap gap-2">
+                {serviceDeviceCode.stagingManifest.roles.map((role) => (
+                  <Badge key={role.key} variant="outline" className="text-sm">
+                    <span className="font-mono">{role.key}</span>: {role.description}
+                  </Badge>
+                ))}
               </div>
             </div>
-            <Separator />
-          </>
-        )}
+          )}
+          {serviceDeviceCode.stagingManifest?.scopes && serviceDeviceCode.stagingManifest.scopes.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground">Scopes</p>
+              <div className="flex flex-wrap gap-2">
+                {serviceDeviceCode.stagingManifest.scopes.map((scope) => (
+                  <Badge key={scope.key} variant="outline" className="text-sm">
+                    <span className="font-mono">{scope.key}</span>: {scope.description}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          </div>
+
+        <Separator />
 
         {/* Organization Selection */}
         {orgData?.organizations && orgData.organizations.length > 0 && (

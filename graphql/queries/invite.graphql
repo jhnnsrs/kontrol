@@ -3,3 +3,10 @@ query InviteByCode($code: String!) {
     ...Invite
   }
 }
+
+
+query GetInvite($id: ID!) {
+  invite(id: $id) {
+    ...Invite
+  }
+}

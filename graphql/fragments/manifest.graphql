@@ -1,0 +1,8 @@
+fragment Manifest on ManagementStagingManifest {
+  identifier
+  version
+  requirements {
+    key
+    description
+  }
+}

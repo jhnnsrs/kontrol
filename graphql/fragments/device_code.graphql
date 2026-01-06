@@ -8,6 +8,11 @@ fragment DeviceCode on ManagementDeviceCode {
     logo
     description
     url
+    scopes 
+    publicSources {
+      kind
+      url
+    }
   }
   client {
     id

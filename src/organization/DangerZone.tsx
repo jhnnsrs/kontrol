@@ -26,15 +26,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 
 export default function DangerZone() {
-  const { id } = useParams<{ id: string }>()
+  const { orgId } = useParams<{ orgId: string }>()
   const navigate = useNavigate()
   const [confirmText, setConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedNewOwner, setSelectedNewOwner] = useState("")
   const [isChangingOwner, setIsChangingOwner] = useState(false)
   const { data, loading, error } = useOrganizationQuery({
-    variables: { id: id! },
-    skip: !id,
+    variables: { id: orgId! },
+    skip: !orgId,
   })
 
   if (loading) return <div>Loading...</div>

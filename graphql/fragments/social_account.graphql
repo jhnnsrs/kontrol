@@ -1,0 +1,45 @@
+fragment BaseSocialAccount on ManagementSocialAccount {
+  id
+  provider
+  __typename
+}
+
+
+fragment OrcidSocialAccount on ManagementOrcidAccount {
+  ...BaseSocialAccount
+  identifier {
+    uri
+    path
+    host
+  }
+  person {
+    researcherUrls
+    addresses 
+  }
+}
+
+fragment GithubSocialAccount on ManagementGithubAccount {
+  ...BaseSocialAccount
+  
+}
+
+fragment GooglebSocialAccount on ManagementGoogleAccount {
+  ...BaseSocialAccount
+  
+}
+
+fragment DetailSocialAccount on ManagementSocialAccount {
+id
+provider
+__typename
+  ...OrcidSocialAccount
+  ...GithubSocialAccount
+  ...GooglebSocialAccount
+}
+
+
+fragment ListSocialAccount on ManagementSocialAccount {
+id
+provider
+__typename
+}

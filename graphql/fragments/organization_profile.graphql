@@ -1,0 +1,11 @@
+fragment OrganizationProfile on ManagementOrganizationProfile {
+  id
+  name
+  avatar {
+    presignedUrl
+  }
+  banner {
+    presignedUrl
+  }
+  bio
+}

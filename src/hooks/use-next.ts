@@ -35,7 +35,6 @@ const useNextFunc = <T extends {[key: string]: unknown}>(form: UseFormReturn<T>,
 
         console.log("Next called with content:", content, path);
         if (content.status === 200) {
-
             navigate(path);
         }
         try {

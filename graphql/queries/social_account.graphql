@@ -1,0 +1,5 @@
+query GetSocialAccount($id: ID!) {
+  socialAccount(id: $id) {
+    ...DetailSocialAccount
+  }
+}

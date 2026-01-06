@@ -6,6 +6,12 @@ fragment DetailClient on ManagementClient {
     id
     username
   }
+  organization {
+    id
+    name
+    slug
+  }
+  lastReportedAt
   functional
   kind
   release {
@@ -33,6 +39,9 @@ fragment DetailClient on ManagementClient {
 
 fragment ListClient on ManagementClient {
   id
+  organization {
+    id
+  }
   user {
     id
     username
@@ -59,4 +68,8 @@ fragment ListClient on ManagementClient {
       }
     }
   }
+  manifest {
+    ...Manifest
+  }
+  lastReportedAt
 }

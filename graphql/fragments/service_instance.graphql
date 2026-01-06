@@ -14,6 +14,10 @@ fragment ServiceInstance on ManagementServiceInstance {
 
   }
   id
+  device {
+    id
+    name
+  }
 
   allowedUsers {
     ...ListUser
@@ -46,10 +50,7 @@ fragment ListServiceInstance on ManagementServiceInstance {
     }
     version
   }
-  allowedUsers {
-    ...ListUser
-  }
-  deniedUsers {
-    ...ListUser
+  organization {
+    id
   }
 }

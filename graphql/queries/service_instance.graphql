@@ -1,8 +1,9 @@
 query ListServiceInstances(
   $pagination: OffsetPaginationInput
-  $filters: ServiceInstanceFilter
+  $filters: ManagementServiceInstanceFilter
+  $order: ManagementServiceInstanceOrder
 ) {
-  serviceInstances(pagination: $pagination, filters: $filters) {
+  serviceInstances(pagination: $pagination, filters: $filters, order: $order) {
     ...ListServiceInstance
   }
 }

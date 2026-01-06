@@ -1,10 +1,26 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMeQuery } from "@/api/graphql";
+import { useMeQuery, useUpdateProfileMutation, useCreateProfileMutation } from "@/api/graphql";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; 
+import { useMediaUpload } from "@/hooks/use-upload";
+import { Pen, Camera, Image as ImageIcon } from "lucide-react";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 export default function Profile() {
-  const { data, loading } = useMeQuery();
+  const { data, loading, refetch } = useMeQuery();
+  const [updateProfile] = useUpdateProfileMutation();
+  const [createProfile] = useCreateProfileMutation();
+  const upload = useMediaUpload();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -16,45 +32,219 @@ export default function Profile() {
     return <div className="flex h-screen items-center justify-center">User not found</div>;
   }
 
+  const profile = user.profile;
+
+  const handleCreateProfile = async () => {
+      try {
+          await createProfile({
+              variables: {
+                  input: {
+                      name: user.username || "New Profile",
+                      bio: ""
+                  }
+              }
+          });
+          toast.success("Profile created!");
+          refetch();
+      } catch (e: any) {
+          toast.error("Failed to create profile: " + e.message);
+      }
+  };
+
+  if (!profile) {
+      return (
+          <div className="container max-w-3xl py-12 text-center">
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Welcome, {user.username}!</CardTitle>
+                      <CardDescription>You don't have a profile yet.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Button onClick={handleCreateProfile}>Create Profile</Button>
+                  </CardContent>
+              </Card>
+          </div>
+      )
+  }
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+        const key = await upload(file);
+        await updateProfile({
+            variables: {
+                input: {
+                    id: profile.id,
+                    avatar: key,
+                }
+            }
+        });
+        toast.success("Avatar updated");
+        refetch();
+    } catch (e) {
+        toast.error("Failed to upload avatar");
+        console.error("Failed to upload avatar", e)
+    }
+    e.target.value = "";
+  };
+
+  const handleBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+        const key = await upload(file);
+        await updateProfile({
+            variables: {
+                input: {
+                    id: profile.id,
+                    banner: key,
+                }
+            }
+        });
+        toast.success("Banner updated");
+        refetch();
+    } catch (e) {
+        toast.error("Failed to upload banner");
+        console.error("Failed to upload banner", e)
+    }
+    e.target.value = "";
+  };
+
+  const startEditing = () => {
+      setEditName(profile.name || "");
+      setEditBio(profile.bio || "");
+      setIsEditing(true);
+  };
+
+  const saveProfile = async () => {
+      try {
+          await updateProfile({
+              variables: {
+                  input: {
+                      id: profile.id,
+                      name: editName,
+                      bio: editBio
+                  }
+              }
+          });
+          setIsEditing(false);
+          toast.success("Profile updated");
+          refetch();
+      } catch (e: any) {
+          toast.error("Failed to update profile: " + e.message);
+      }
+  };
+
+
   return (
-    <div className="container max-w-3xl py-8">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Profile</h1>
-          <p className="text-muted-foreground">Manage your profile information</p>
-        </div>
+    <div className="container mx-auto py-0 space-y-6">
+        {/* Hero Section */}
+       <div className="relative mb-20 group/banner">
+            {/* Banner */}
+            <div className="h-64 w-full bg-muted border-b border-border/40 rounded-b-lg overflow-hidden relative">
+                 {profile.banner?.presignedUrl ? (
+                     <img src={profile.banner.presignedUrl} alt="Banner" className="w-full h-full object-cover" />
+                 ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-blue-500/20 to-purple-500/20" />
+                 )}
+                 
+                 {/* Banner Edit Button */}
+                 <div className="absolute top-4 right-4 opacity-0 group-hover/banner:opacity-100 transition-opacity">
+                      <Button variant="secondary" size="sm" onClick={() => bannerInputRef.current?.click()}>
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          Change Banner
+                      </Button>
+                 </div>
+            </div>
 
-        <Separator />
+            {/* Avatar & Info Overlay */}
+            <div className="container mx-auto px-6 absolute -bottom-16 left-0 flex flex-row gap-6 items-end w-full">
+                {/* Avatar */}
+                <div className="relative group/avatar w-40 h-40 cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                    <div className="w-40 h-40 rounded-full ring-4 ring-background shadow-xl overflow-hidden bg-muted flex items-center justify-center text-4xl font-semibold select-none bg-white dark:bg-zinc-950">
+                        <Avatar className="h-full w-full">
+                            <AvatarImage src={profile.avatar?.presignedUrl || undefined} className="object-cover" />
+                            <AvatarFallback className="text-4xl">{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                    </div>
+                    {/* Overlay */}
+                    <div className="absolute inset-0 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity bg-black/50 flex items-center justify-center text-xs text-white font-medium backdrop-blur-sm z-10">
+                        <Camera className="w-6 h-6 mb-1" />
+                        <span className="sr-only">Change</span>
+                    </div>
+                 </div>
 
+                 {/* Basic Info (Name) */}
+                 <div className="flex-1 pb-4 mb-2">
+                      <h1 className="text-4xl font-bold tracking-tight text-foreground drop-shadow-md">
+                          {profile.name || user.username}
+                      </h1>
+                      <p className="text-muted-foreground font-medium">@{user.username}</p>
+                 </div>
+            </div>
+            
+             {/* Hidden Inputs */}
+            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerSelect} />
+       </div>
+
+
+      <div className="container max-w-4xl px-6 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>User Information</CardTitle>
-            <CardDescription>Your personal details</CardDescription>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle>About</CardTitle>
+                    <CardDescription>Personal information and bio</CardDescription>
+                </div>
+                {!isEditing ? (
+                    <Button variant="outline" size="sm" onClick={startEditing}>
+                        <Pen className="w-4 h-4 mr-2" />
+                        Edit Profile
+                    </Button>
+                ) : (
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                        <Button size="sm" onClick={saveProfile}>Save Changes</Button>
+                    </div>
+                )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user.profile?.avatar?.presignedUrl || ""} />
-                <AvatarFallback className="text-2xl">
-                  {user.username.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-xl font-semibold">{user.username}</h3>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium">Username</p>
-                <p className="text-sm text-muted-foreground">{user.username}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-              </div>
-            </div>
+             {isEditing ? (
+                 <div className="space-y-4">
+                     <div className="space-y-2">
+                         <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Display Name</label>
+                         <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display Name" />
+                     </div>
+                     <div className="space-y-2">
+                         <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Bio</label>
+                         <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Tell us about yourself" className="resize-none min-h-[100px]" />
+                     </div>
+                 </div>
+             ) : (
+                 <div className="space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                             <h4 className="text-sm font-medium text-muted-foreground mb-1">Display Name</h4>
+                             <p className="text-sm font-medium">{profile.name}</p>
+                         </div>
+                         <div>
+                             <h4 className="text-sm font-medium text-muted-foreground mb-1">Username</h4>
+                             <p className="text-sm font-medium">@{user.username}</p>
+                         </div>
+                         <div>
+                             <h4 className="text-sm font-medium text-muted-foreground mb-1">Email</h4>
+                             <p className="text-sm font-medium">{user.email}</p>
+                         </div>
+                     </div>
+                     <div>
+                         <h4 className="text-sm font-medium text-muted-foreground mb-1">Bio</h4>
+                         <p className="text-sm whitespace-pre-wrap">{profile.bio || "No bio set."}</p>
+                     </div>
+                 </div>
+             )}
           </CardContent>
         </Card>
       </div>

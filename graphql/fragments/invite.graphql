@@ -40,6 +40,7 @@ fragment Invite on ManagementInvite {
     }
   }
   status
+  inviteUrl
   createdAt
   expiresAt
 }

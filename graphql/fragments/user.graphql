@@ -42,4 +42,7 @@ fragment MeUser on ManagementUser {
   memberships {
     ...Membership
   }
+  socialAccounts {
+    ...ListSocialAccount
+  }
 }
