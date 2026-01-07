@@ -83,6 +83,8 @@ import Role from './roles/Role'
 import Roles from './roles/Roles'
 import Scope from './scopes/Scope'
 import Scopes from './scopes/Scopes'
+import Callback from './Callback'
+import { AnonymousLayout } from './components/layouts/AnonymousLayout'
 
 
 function RouterErrorBoundary() {
@@ -100,11 +102,28 @@ function createRouter () {
       errorElement: <RouterErrorBoundary />,
       children: [
         {
+          element: <AnonymousLayout />,
+          children: [
+            {
+              path: '/account/login',
+              element: <AnonymousRoute><Login /></AnonymousRoute>
+            },
+          ]
+
+        },
+
+
+
+        {
           element: <ManagementLayout />,
           children: [
             {
               path: '/',
               element: <AuthenticatedRoute><Home /></AuthenticatedRoute>
+            },
+            {
+              path: '/callback',
+              element: <Callback />
             },
             {
               path: '/home',
@@ -165,11 +184,6 @@ function createRouter () {
             {
               path: '/devices/:id',
               element: <AuthenticatedRoute><Device /></AuthenticatedRoute>
-            },
-            // Auth routes 
-            {
-              path: '/account/login',
-              element: <AnonymousRoute><Login /></AnonymousRoute>
             },
             {
               path: '/account/login/code',
@@ -450,7 +464,7 @@ function createRouter () {
             },
           ]
         },
-        // Catch all
+        
         {
              element: <ManagementLayout />,
              children: [

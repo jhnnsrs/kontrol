@@ -33,17 +33,16 @@ export default function OrganizationDashboard() {
              {/* Stats or Quick Links could go here */}
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2">
-            <div>
-                <h2 className="text-xl font-semibold mb-4">Clients</h2>
+        <div className="flex flex-col gap-6">
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold"><Link to={`/organization/${orgId}/clients`}> Clients</Link></h2>
                 {hasClients ? (
                     <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {latestClients.map(client => (
                             <ClientCard key={client.id} client={client} />
                         ))}
-                         <Button variant="outline" className="w-full" asChild>
-                            <Link to={`/organization/${orgId}/clients`}>View All Clients</Link>
-                        </Button>
+                      </div>
                     </div>
                 ) : (
                     <Card>
@@ -68,14 +67,16 @@ export default function OrganizationDashboard() {
                 )}
             </div>
 
-            <div>
-                <h2 className="text-xl font-semibold mb-4">Services</h2>
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Services</h2>
                 {hasServices ? (
-                    <div className="space-y-4 flex flex-col gap-2">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                          {latestServices.map(service => (
                             <ServiceInstanceCard key={service.id} instance={service} />
                         ))}
-                        <Button variant="outline" className="w-full" asChild>
+                      </div>
+                      <Button variant="outline" asChild>
                             <Link to={`/organization/${orgId}/service-instances`}>View All Services</Link>
                         </Button>
                     </div>

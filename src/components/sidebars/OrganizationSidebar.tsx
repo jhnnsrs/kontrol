@@ -160,9 +160,10 @@ export function OrganizationSidebar() {
                         <SidebarMenu>
                             {org.latestServices.map(instance => (
                                 <SidebarMenuItem key={instance.id}>
-                                    <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/service-instances/${instance.id}`)}>
+                                    <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/service-instances/${instance.id}`)} >
                                         <Link to={`/organization/${org.id}/service-instances/${instance.id}`}>
-                                            <span>{instance.identifier}</span>
+                                            <div>{instance.release.service.identifier}</div>
+                                            <div className="text-muted-foreground">{instance.release.version}</div>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

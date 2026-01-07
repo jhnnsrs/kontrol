@@ -136,9 +136,6 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
         style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: isDark 
-                ? 'radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.4) 100%)' 
-                : 'radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.1) 100%)',
             pointerEvents: 'none',
             zIndex: 10
         }} 
@@ -161,7 +158,7 @@ const AutoLogo: React.FC<AutoLogoProps> = ({
           ))}
         </group>
 
-        <EffectComposer disableNormalPass>
+        <EffectComposer>
             <Bloom 
                 luminanceThreshold={0.2} 
                 luminanceSmoothing={0.9} 

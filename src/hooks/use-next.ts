@@ -21,7 +21,7 @@ export const flowToUrl = (flow: AuthFlow, next: string): string => {
   }
 }
 
-const isPending = (flow: AuthFlow): boolean => {
+export const isPending = (flow: AuthFlow): boolean => {
   return flow.is_pending || flow.id == "mfa_reauthenticate";
 }
 
