@@ -1,0 +1,11 @@
+mutation AcceptCompositionDeviceCode($input: AcceptCompositionDeviceCodeInput!) {
+  acceptCompositionDeviceCode(input: $input) {
+    ...Composition
+  }
+}
+
+mutation DeclineCompositionDeviceCode($input: DeclineCompositionDeviceCodeInput!) {
+  declineCompositionDeviceCode(input: $input) {
+    ...CompositionDeviceCode
+  }
+}

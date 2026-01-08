@@ -10,12 +10,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, GalleryVerticalEnd } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import type { AuthFlow } from '@/auth/types'
 import { handleFormErrors } from "@/lib/utils"
 import { useLoginForm } from '@/hooks/use-next'
 import GoogleOneTap from '@/socialaccount/GoogleOneTap'
+import ServiceLogo from '@/components/ServiceLogo'
 
 const formSchema = z.object({
   username: z.string().min(1, "Username/Email is required"),
@@ -49,62 +50,53 @@ export const flowToActionButton = (flow: AuthFlow): React.ReactNode => {
 
 
 
-
-
 export const LoginForm = () => {
   const [globalError, setGlobalError] = useState<string | null>(null)
   const config = useConfig()
   const hasProviders = config.data.socialaccount?.providers?.length > 0
   const next = useSearchParams()[0].get("next") || "/home"
 
-
   const [pendingFlows, setPendingFlows] = useState<AuthFlow[]>([])
 
   const {form, onSubmit} = useLoginForm()
 
   return (
-    <div className="space-y-6 flex flex-col items-center">
+    <div className="space-y-4">
+      {next && next != "/" && (<>
+        <Card className="text-muted-foreground text-xs w-full p-2">
+          <div className="w-full">
+          You will be redirected to <code>{next}</code> after login
+          </div>
+        </Card>
+      </>)}
     
-          
-          {next && next != "/" && (<>
-            <Card className="text-muted-foreground text-xs w-full p-2">
-              <div className="w-full">
-              You will be redirected to <code>{next}</code> after login
-              </div>
-            </Card>
-          </>)}
-    <div className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Login to your account</CardTitle>
-        <CardDescription>
-          Enter your email below to login to your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {globalError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{globalError}</AlertDescription>
+      {globalError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{globalError}</AlertDescription>
+        </Alert>
+      )}
+
+      {pendingFlows.length > 0 && (
+        <>{pendingFlows.map((p) => <>
+          <Alert key={p.id} variant="default">
+            <AlertTitle>Action Required: {p.id}</AlertTitle>
+            <AlertDescription>
+              {flowToMessage(p)}
+            </AlertDescription>
+            {flowToActionButton(p)}
           </Alert>
-        )}
+        </>)}</>
+      )}
 
-        {pendingFlows.length > 0 && (
-          <>{pendingFlows.map((p) => <>
-
-            <Alert key={p.id} variant="default" className="mb-4">
-              <AlertTitle>Action Required: {p.id}</AlertTitle>
-              <AlertDescription>
-                {flowToMessage(p)}
-              </AlertDescription>
-              {flowToActionButton(p)}
-              
-            </Alert>
-
-
-
-          </>)}</>
-        )}
+      <div className="space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-2xl font-bold">Login to your account</h1>
+          <p className="text-muted-foreground">
+            Enter your email below to login to your account
+          </p>
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -149,7 +141,7 @@ export const LoginForm = () => {
         </Form>
 
         {hasProviders && (
-          <div className="mt-6">
+          <div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -161,15 +153,14 @@ export const LoginForm = () => {
               </div>
             </div>
             <div className="mt-4">
-
-                    <GoogleOneTap process={"login"} />
+              <GoogleOneTap process={"login"} />
               <ProviderList callbackURL={next || "/"} process='login'/>
             </div>
           </div>
         )}
 
         {config?.data.account.login_by_code_enabled && (
-          <div className="mt-6">
+          <div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -185,24 +176,36 @@ export const LoginForm = () => {
             </div>
           </div>
         )}
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
+      </div>
+
+      <div className="text-center text-sm">
+        <p className="text-muted-foreground">
           Don't have an account?{" "}
-          <Link to="/account/signup" className="underline text-primary">
+          <Link to="/account/signup" className="underline text-primary underline-offset-4 hover:text-primary/80">
             Sign up
           </Link>
         </p>
-      </CardFooter>
-    </div>
+      </div>
     </div>
   )
 }
 
 export default function Login () {
   return (
-    <div className="flex justify-center items-center min-h-[50vh]">
-      <LoginForm />
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+        </div>
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-xs">
+            <LoginForm />
+          </div>
+        </div>
+      </div>
+      <div className="fixed top-0 right-0 h-screen w-[40vw] lg:block">
+         <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent z-10 py-10" />
+        <ServiceLogo service={"arkitekt.live"} />
+      </div>
     </div>
   )
 }

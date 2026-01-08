@@ -17,11 +17,18 @@ fragment DetailDevice on ManagementDevice {
   id
   name
   nodeId
+  organization {
+    id
+    name
+  }
   clients {
     ...DetailClient
   }
   deviceGroups {
     ...ListDeviceGroup
+  }
+  serviceInstances {
+    ...ListServiceInstance
   }
 }
 

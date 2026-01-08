@@ -6,3 +6,41 @@ fragment Manifest on ManagementStagingManifest {
     description
   }
 }
+
+fragment ServiceManifest on ManagementStagingServiceManifest {
+  identifier
+  version
+  logo
+  description
+  roles {
+    key
+    description
+  }
+  scopes {
+    key
+    description
+  }
+  publicSources {
+    kind
+    url
+  }
+}
+
+
+fragment CompositionManifest on ManagementCompositionManifest {
+  identifier
+  instances {
+    manifest {
+      ...ServiceManifest
+    }
+    description
+    identifier
+  }
+  clients {
+    manifest {
+      ...Manifest
+    }
+    description
+    identifier
+  }
+}

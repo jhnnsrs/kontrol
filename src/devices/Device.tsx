@@ -185,6 +185,30 @@ export default function Device() {
                  )}
             </div>
             
+                 
+             <div className="space-y-4">
+                 <h3 className="font-semibold text-lg">Services</h3>
+                 {device.serviceInstances && device.serviceInstances.length > 0 ? (
+                    <div className="grid gap-2">
+                        {device.serviceInstances.map(instance => (
+                            <Link key={instance.id} to={`/organization/${device.organization.id}/service-instances/${instance.id}`}>
+                                <div className="p-3 border rounded-md hover:bg-muted/50 transition-colors flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarFallback>{instance.identifier.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <div className="font-medium text-sm">{instance.identifier}</div>
+                                        <div className="text-xs text-muted-foreground">{instance.release.service.identifier} v{instance.release.version}</div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                 ) : (
+                    <div className="text-muted-foreground text-sm italic">No clients connected to this device.</div>
+                 )}
+            </div>
+
              <div className="space-y-4">
                  <h3 className="font-semibold text-lg">Details</h3>
                  <Card>

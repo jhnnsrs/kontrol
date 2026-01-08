@@ -1,0 +1,10 @@
+
+mutation UpdateComposition($input: UpdateCompositionInput!) {
+  updateComposition(input: $input) {
+    ...Composition
+  }
+}
+
+mutation DeleteComposition($input: DeleteCompositionInput!) {
+  deleteComposition(input: $input) 
+}

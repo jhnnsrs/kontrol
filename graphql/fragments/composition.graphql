@@ -1,0 +1,29 @@
+fragment ListComposition  on ManagementComposition {
+  id
+  name 
+  organization {
+    id
+    name
+  }
+  instances {
+    ...ListServiceInstance
+  }
+  clients {
+    ...ListClient
+  }
+}
+
+fragment Composition on ManagementComposition {
+  id
+  name 
+  organization {
+    id
+    name
+  }
+  instances {
+    ...ListServiceInstance
+  }
+  clients {
+    ...ListClient
+  }
+}

@@ -1,0 +1,12 @@
+query Compositions($filters: ManagementCompositionFilter, $order: ManagementCompositionOrder, $pagination: OffsetPaginationInput) {
+  compositions(filters: $filters, order: $order, pagination: $pagination) {
+    ...ListComposition
+  }
+}
+
+
+query GetComposition($id: ID!) {
+  composition(id: $id) {
+    ...Composition
+  }
+}

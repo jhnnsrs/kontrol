@@ -68,6 +68,9 @@ import Releases from './releases/Releases'
 import ServiceRelease from './service-releases/ServiceRelease'
 import ServiceReleases from './service-releases/ServiceReleases'
 import { ServiceConfigurePage } from './service/ServiceConfigurePage'
+import { CompositionConfigurePage } from './composition/CompositionConfigurePage'
+import Compositions from './compositions/Compositions'
+import Composition from './compositions/Composition'
 import Service from './services/Service'
 import ServiceInstance from './services/ServiceInstance'
 import ServiceInstanceMapping from './services/ServiceInstanceMapping'
@@ -107,6 +110,10 @@ function createRouter () {
             {
               path: '/account/login',
               element: <AnonymousRoute><Login /></AnonymousRoute>
+            },
+            {
+              path: '/account/signup',
+              element: <AnonymousRoute><Signup /></AnonymousRoute>
             },
           ]
 
@@ -193,10 +200,6 @@ function createRouter () {
               path: '/account/login/code/confirm',
               element: <AnonymousRoute><ConfirmLoginCode /></AnonymousRoute>
             },
-             {
-              path: '/account/signup',
-              element: <AnonymousRoute><Signup /></AnonymousRoute>
-            },
             {
               path: '/account/logout',
               element: <Logout />
@@ -277,6 +280,10 @@ function createRouter () {
               element:  <AuthenticatedRoute><ServiceConfigurePage /></AuthenticatedRoute>
             },
             {
+              path: '/compositionconfigure/:compositionCode',
+              element: <AuthenticatedRoute><CompositionConfigurePage /></AuthenticatedRoute>
+            },
+            {
               path: '/invite/:code',
               element: <AuthenticatedRoute><InvitePage /></AuthenticatedRoute>
             },
@@ -338,6 +345,14 @@ function createRouter () {
             {
               path: 'service-instance-mappings/:id',
               element: <AuthenticatedRoute><ServiceInstanceMapping /></AuthenticatedRoute>
+            },
+            {
+              path: 'compositions',
+              element: <AuthenticatedRoute><Compositions /></AuthenticatedRoute>
+            },
+            {
+              path: 'compositions/:name',
+              element: <AuthenticatedRoute><Composition /></AuthenticatedRoute>
             },
             {
               path: 'devices',

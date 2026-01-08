@@ -1,7 +1,7 @@
 import { Sidebar, SidebarContent, SidebarHeader, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroupLabel, SidebarSeparator } from "@/components/ui/sidebar"
 import { Link, useParams, useLocation } from "react-router-dom"
 import { useSidebarOrganizationQuery } from "@/api/graphql"
-import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes } from "lucide-react"
+import { LayoutDashboard, Building2, Users, Mail, Settings, Package, Zap, Smartphone, Lock, Shield, Boxes, Layers } from "lucide-react"
 
 export function OrganizationSidebar() {
     const { orgId } = useParams<{ orgId: string }>()
@@ -97,6 +97,14 @@ export function OrganizationSidebar() {
                             <Link to={`/organization/${org.id}/service-instances`}>
                               <Zap className="mr-2 h-4 w-4" />
                               <span>Service Instances</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/compositions`)}>
+                            <Link to={`/organization/${org.id}/compositions`}>
+                              <Layers className="mr-2 h-4 w-4" />
+                              <span>Compositions</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
