@@ -1,0 +1,9 @@
+mutation CreateIonscaleLayer($input: CreateIonscaleLayerInput!) {
+  createIonscaleLayer(input: $input) {
+    ...Layer
+  }
+}
+
+mutation DeleteIonscaleLayer($input: DeleteIonscaleLayerInput!) {
+  deleteIonscaleLayer(input: $input) 
+}

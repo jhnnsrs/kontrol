@@ -109,6 +109,14 @@ export function OrganizationSidebar() {
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/layers`)}>
+                            <Link to={`/organization/${org.id}/layers`}>
+                              <Layers className="mr-2 h-4 w-4" />
+                              <span>Layers</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
                           <SidebarMenuButton asChild isActive={isActive(`/organization/${org.id}/devices`, true)}>
                             <Link to={`/organization/${org.id}/devices`}>
                               <Smartphone className="mr-2 h-4 w-4" />

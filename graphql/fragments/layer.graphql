@@ -5,8 +5,8 @@ fragment Layer on ManagementLayer {
   logo {
     presignedUrl
   }
-  instances {
-    ...ListServiceInstance
+  aliases {
+    ...ListInstanceAlias
   }
 }
 

@@ -91,6 +91,13 @@ export type CreateInviteInput = {
   roles?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+export type CreateIonscaleLayerInput = {
+  /** The name of the tailnet layer. */
+  name?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the organization to create the tailnet layer for. */
+  organizationId: Scalars['ID']['input'];
+};
+
 export type CreateOrganizationInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
@@ -138,6 +145,10 @@ export type DeleteDeviceInput = {
   id: Scalars['ID']['input'];
 };
 
+export type DeleteIonscaleLayerInput = {
+  id: Scalars['ID']['input'];
+};
+
 export type DeleteMembershipInput = {
   id: Scalars['ID']['input'];
 };
@@ -165,15 +176,12 @@ export type GroupFilter = {
   search?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Layer(id, name, identifier, logo, description, dns_probe, get_probe, kind) */
-export type LayerFilter = {
-  AND?: InputMaybe<LayerFilter>;
-  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
-  NOT?: InputMaybe<LayerFilter>;
-  OR?: InputMaybe<LayerFilter>;
-  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
-  search?: InputMaybe<Scalars['String']['input']>;
-};
+export enum LayerKind {
+  Base = 'BASE',
+  Ionscale = 'IONSCALE',
+  Tailnet = 'TAILNET',
+  Vpn = 'VPN'
+}
 
 /** An App is the Arkitekt equivalent of a Software Application. It is a collection of `Releases` that can be all part of the same application. E.g the App `Napari` could have the releases `0.1.0` and `0.2.0`. */
 export type ManagementApp = {
@@ -569,6 +577,8 @@ export type ManagementInstanceAlias = {
   kind: Scalars['String']['output'];
   /** The layer that this alias belongs to. */
   layer?: Maybe<ManagementLayer>;
+  /** The organization that owns this alias. */
+  organization: ManagementOrganization;
   /** The path of the alias, if its a ABSOLUTE alias (e.g. 'example.com/path'). If not set, the alias is relative to the layer's path. */
   path?: Maybe<Scalars['String']['output']>;
   /** The port of the alias, if its a ABSOLUTE alias (e.g. 'example.com:8080'). If not set, the alias is relative to the layer's port. */
@@ -641,28 +651,47 @@ export type ManagementInviteRolesArgs = {
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
-/** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
+/** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
 export type ManagementLayer = {
   __typename?: 'ManagementLayer';
+  /** The instances of the service. A service instance is a configured instance of a service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
+  aliases: Array<ManagementInstanceAlias>;
   /** The description of the service. This should be a human readable description of the service. */
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  /** The identifier of the service. This should be a globally unique string that identifies the service. We encourage you to use the reverse domain name notation. E.g. `com.example.myservice` */
-  identifier: Scalars['ServiceIdentifier']['output'];
-  /** The instances of the service. A service instance is a configured instance of a service. It will be configured by a configuration backend and will be used to send to the client as a configuration. It should never contain sensitive information. */
-  instances: Array<ManagementServiceInstance>;
-  /** The logo of the service. This should be a url to a logo that can be used to represent the service. */
+  /** The kind of the layer. E.g. `VPN` or `TOR` */
+  kind: LayerKind;
+  /** The logo of the layer. This should be a url to a logo that can be used to represent the layer. */
   logo?: Maybe<ManagementMediaStore>;
   /** The name of the layer */
   name: Scalars['String']['output'];
+  /** The organization that owns this alias. */
+  organization: ManagementOrganization;
 };
 
 
-/** A Service is a Webservice that a Client might want to access. It is not the configured instance of the service, but the service itself. */
-export type ManagementLayerInstancesArgs = {
-  filters?: InputMaybe<ManagementServiceInstanceFilter>;
-  order?: InputMaybe<ManagementServiceInstanceOrder>;
+/** A Layer is a transport layer that needs to be used to reach an alias. E.g a VPN layer or a Tor layer. */
+export type ManagementLayerAliasesArgs = {
+  filters?: InputMaybe<ManagementInstanceAliasFilter>;
+  order?: InputMaybe<ManagementInstanceAliasOrder>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+/** Layer(id, name, identifier, organization, logo, description, dns_probe, get_probe, kind) */
+export type ManagementLayerFilter = {
+  AND?: InputMaybe<ManagementLayerFilter>;
+  DISTINCT?: InputMaybe<Scalars['Boolean']['input']>;
+  NOT?: InputMaybe<ManagementLayerFilter>;
+  OR?: InputMaybe<ManagementLayerFilter>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  organization?: InputMaybe<Scalars['ID']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type ManagementLayerOrder = {
+  createdAt?: InputMaybe<Ordering>;
+  lastReportedAt?: InputMaybe<Ordering>;
+  name?: InputMaybe<Ordering>;
 };
 
 /**
@@ -1418,6 +1447,7 @@ export type Mutation = {
   createDevice: ManagementDevice;
   createDeviceGroup: ManagementDeviceGroup;
   createInvite: ManagementInvite;
+  createIonscaleLayer: ManagementLayer;
   createOrganization: ManagementOrganization;
   createOrganizationProfile: ManagementOrganizationProfile;
   createProfile: ManagementProfile;
@@ -1430,6 +1460,7 @@ export type Mutation = {
   deleteComposition: Scalars['ID']['output'];
   deleteDevice: Scalars['ID']['output'];
   deleteDeviceGroup: Scalars['ID']['output'];
+  deleteIonscaleLayer: Scalars['ID']['output'];
   deleteMembership: Scalars['ID']['output'];
   deleteOrganization: Scalars['ID']['output'];
   deleteOrganizationProfile: Scalars['ID']['output'];
@@ -1501,6 +1532,11 @@ export type MutationCreateInviteArgs = {
 };
 
 
+export type MutationCreateIonscaleLayerArgs = {
+  input: CreateIonscaleLayerInput;
+};
+
+
 export type MutationCreateOrganizationArgs = {
   input: CreateOrganizationInput;
 };
@@ -1553,6 +1589,11 @@ export type MutationDeleteDeviceArgs = {
 
 export type MutationDeleteDeviceGroupArgs = {
   input: DeleteDeviceGroupInput;
+};
+
+
+export type MutationDeleteIonscaleLayerArgs = {
+  input: DeleteIonscaleLayerInput;
 };
 
 
@@ -1686,6 +1727,7 @@ export type Query = {
   inviteByCode: ManagementInvite;
   layer: ManagementLayer;
   layers: Array<ManagementLayer>;
+  managementLayers: Array<ManagementLayer>;
   me: ManagementUser;
   membership: ManagementMembership;
   memberships: Array<ManagementMembership>;
@@ -1829,7 +1871,15 @@ export type QueryLayerArgs = {
 
 
 export type QueryLayersArgs = {
-  filters?: InputMaybe<LayerFilter>;
+  filters?: InputMaybe<ManagementLayerFilter>;
+  order?: InputMaybe<ManagementLayerOrder>;
+  pagination?: InputMaybe<OffsetPaginationInput>;
+};
+
+
+export type QueryManagementLayersArgs = {
+  filters?: InputMaybe<ManagementLayerFilter>;
+  order?: InputMaybe<ManagementLayerOrder>;
   pagination?: InputMaybe<OffsetPaginationInput>;
 };
 
@@ -2158,7 +2208,7 @@ export type InviteFragment = { __typename?: 'ManagementInvite', id: string, toke
 
 export type DetailInviteFragment = { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> };
 
-export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> };
+export type LayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> };
 
 export type ListLayerFragment = { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null };
 
@@ -2415,6 +2465,20 @@ export type CancelInviteMutationVariables = Exact<{
 
 export type CancelInviteMutation = { __typename?: 'Mutation', cancelInvite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null } };
 
+export type CreateIonscaleLayerMutationVariables = Exact<{
+  input: CreateIonscaleLayerInput;
+}>;
+
+
+export type CreateIonscaleLayerMutation = { __typename?: 'Mutation', createIonscaleLayer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> } };
+
+export type DeleteIonscaleLayerMutationVariables = Exact<{
+  input: DeleteIonscaleLayerInput;
+}>;
+
+
+export type DeleteIonscaleLayerMutation = { __typename?: 'Mutation', deleteIonscaleLayer: string };
+
 export type UpdateMembershipMutationVariables = Exact<{
   input: UpdateMembershipInput;
 }>;
@@ -2654,8 +2718,9 @@ export type GetInviteQueryVariables = Exact<{
 export type GetInviteQuery = { __typename?: 'Query', invite: { __typename?: 'ManagementInvite', id: string, token: string, status: string, inviteUrl: string, createdAt: any, expiresAt?: any | null, createdBy: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, createdFor: { __typename?: 'ManagementOrganization', id: string, name: string, slug: string, roles: Array<{ __typename?: 'ManagementRole', id: string, identifier: string, description: string }>, memberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }>, profile?: { __typename?: 'ManagementOrganizationProfile', id: string, name?: string | null, bio?: string | null, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, banner?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } | null, invites: Array<{ __typename?: 'ManagementInvite', id: string, status: string, expiresAt?: any | null, token: string, inviteUrl: string, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null }> }, acceptedBy?: { __typename?: 'ManagementUser', id: string, username: string, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } | null, createdMemberships: Array<{ __typename?: 'ManagementMembership', id: string, roles: Array<{ __typename?: 'ManagementRole', identifier: string, id: string }>, user: { __typename?: 'ManagementUser', id: string, username: string, email?: string | null, profile: { __typename?: 'ManagementProfile', id: string, avatar?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } } }> } };
 
 export type LayersQueryVariables = Exact<{
-  filters?: InputMaybe<LayerFilter>;
+  filters?: InputMaybe<ManagementLayerFilter>;
   pagination?: InputMaybe<OffsetPaginationInput>;
+  order?: InputMaybe<ManagementLayerOrder>;
 }>;
 
 
@@ -2666,7 +2731,7 @@ export type DetailLayerQueryVariables = Exact<{
 }>;
 
 
-export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, instances: Array<{ __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', id: string, version: string, service: { __typename?: 'ManagementService', id: string, identifier: any, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null } }, organization: { __typename?: 'ManagementOrganization', id: string } }> } };
+export type DetailLayerQuery = { __typename?: 'Query', layer: { __typename?: 'ManagementLayer', id: string, name: string, description?: string | null, logo?: { __typename?: 'ManagementMediaStore', presignedUrl: string } | null, aliases: Array<{ __typename?: 'ManagementInstanceAlias', id: string, host?: string | null, port?: number | null, ssl: boolean, path?: string | null, challenge: string, kind: string, layer?: { __typename?: 'ManagementLayer', id: string, name: string } | null, instance: { __typename?: 'ManagementServiceInstance', id: string, identifier: string, release: { __typename?: 'ManagementServiceRelease', version: string, service: { __typename?: 'ManagementService', id: string, identifier: any } } } }> } };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3416,11 +3481,11 @@ export const LayerFragmentDoc = gql`
   logo {
     presignedUrl
   }
-  instances {
-    ...ListServiceInstance
+  aliases {
+    ...ListInstanceAlias
   }
 }
-    ${ListServiceInstanceFragmentDoc}`;
+    ${ListInstanceAliasFragmentDoc}`;
 export const ListLayerFragmentDoc = gql`
     fragment ListLayer on ManagementLayer {
   id
@@ -4525,6 +4590,70 @@ export function useCancelInviteMutation(baseOptions?: Apollo.MutationHookOptions
 export type CancelInviteMutationHookResult = ReturnType<typeof useCancelInviteMutation>;
 export type CancelInviteMutationResult = Apollo.MutationResult<CancelInviteMutation>;
 export type CancelInviteMutationOptions = Apollo.BaseMutationOptions<CancelInviteMutation, CancelInviteMutationVariables>;
+export const CreateIonscaleLayerDocument = gql`
+    mutation CreateIonscaleLayer($input: CreateIonscaleLayerInput!) {
+  createIonscaleLayer(input: $input) {
+    ...Layer
+  }
+}
+    ${LayerFragmentDoc}`;
+export type CreateIonscaleLayerMutationFn = Apollo.MutationFunction<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>;
+
+/**
+ * __useCreateIonscaleLayerMutation__
+ *
+ * To run a mutation, you first call `useCreateIonscaleLayerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateIonscaleLayerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createIonscaleLayerMutation, { data, loading, error }] = useCreateIonscaleLayerMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateIonscaleLayerMutation(baseOptions?: Apollo.MutationHookOptions<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>(CreateIonscaleLayerDocument, options);
+      }
+export type CreateIonscaleLayerMutationHookResult = ReturnType<typeof useCreateIonscaleLayerMutation>;
+export type CreateIonscaleLayerMutationResult = Apollo.MutationResult<CreateIonscaleLayerMutation>;
+export type CreateIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<CreateIonscaleLayerMutation, CreateIonscaleLayerMutationVariables>;
+export const DeleteIonscaleLayerDocument = gql`
+    mutation DeleteIonscaleLayer($input: DeleteIonscaleLayerInput!) {
+  deleteIonscaleLayer(input: $input)
+}
+    `;
+export type DeleteIonscaleLayerMutationFn = Apollo.MutationFunction<DeleteIonscaleLayerMutation, DeleteIonscaleLayerMutationVariables>;
+
+/**
+ * __useDeleteIonscaleLayerMutation__
+ *
+ * To run a mutation, you first call `useDeleteIonscaleLayerMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteIonscaleLayerMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteIonscaleLayerMutation, { data, loading, error }] = useDeleteIonscaleLayerMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteIonscaleLayerMutation(baseOptions?: Apollo.MutationHookOptions<DeleteIonscaleLayerMutation, DeleteIonscaleLayerMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<DeleteIonscaleLayerMutation, DeleteIonscaleLayerMutationVariables>(DeleteIonscaleLayerDocument, options);
+      }
+export type DeleteIonscaleLayerMutationHookResult = ReturnType<typeof useDeleteIonscaleLayerMutation>;
+export type DeleteIonscaleLayerMutationResult = Apollo.MutationResult<DeleteIonscaleLayerMutation>;
+export type DeleteIonscaleLayerMutationOptions = Apollo.BaseMutationOptions<DeleteIonscaleLayerMutation, DeleteIonscaleLayerMutationVariables>;
 export const UpdateMembershipDocument = gql`
     mutation UpdateMembership($input: UpdateMembershipInput!) {
   updateMembership(input: $input) {
@@ -5769,8 +5898,8 @@ export type GetInviteLazyQueryHookResult = ReturnType<typeof useGetInviteLazyQue
 export type GetInviteSuspenseQueryHookResult = ReturnType<typeof useGetInviteSuspenseQuery>;
 export type GetInviteQueryResult = Apollo.QueryResult<GetInviteQuery, GetInviteQueryVariables>;
 export const LayersDocument = gql`
-    query Layers($filters: LayerFilter, $pagination: OffsetPaginationInput) {
-  layers(filters: $filters, pagination: $pagination) {
+    query Layers($filters: ManagementLayerFilter, $pagination: OffsetPaginationInput, $order: ManagementLayerOrder) {
+  layers(filters: $filters, pagination: $pagination, order: $order) {
     ...ListLayer
   }
 }
@@ -5790,6 +5919,7 @@ export const LayersDocument = gql`
  *   variables: {
  *      filters: // value for 'filters'
  *      pagination: // value for 'pagination'
+ *      order: // value for 'order'
  *   },
  * });
  */

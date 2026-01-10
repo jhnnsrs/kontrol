@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge"
 import { Link } from "react-router-dom"
 import { ClientUsedAliasFlow } from "./ClientUsedAliasFlow"
 import AutoLogo from "@/components/AutoLogo"
+import { cn } from "@/lib/utils"
 
 export default function Client() {
   const { id } = useParams<{ id: string }>()
@@ -38,7 +39,13 @@ export default function Client() {
                 <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <CardTitle className="text-2xl">{client.name || "Unnamed Client"}</CardTitle>
+                <CardTitle className="text-2xl flex flex-row items-center gap-2">{client.name || "Unnamed Client"}{client.functional && (
+                    
+                <div className="bg-green-300 rounded rounded-full h-4 w-4 animate animate-pulse my-auto" />
+
+                
+            )}
+</CardTitle>
                 <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{client.organization.name}</Badge>
                     <span className="text-muted-foreground">by {client.user?.username}</span>
@@ -65,15 +72,7 @@ export default function Client() {
                     </div>
                 )}
 
-                {client.functional && (
-                    <Badge className="flex flex-row items-center gap-2 px-4 py-2 border border-green-300 bg-green-100/50 text-green-800 w-fit">
-                <div className="bg-green-300 rounded rounded-full h-4 w-4 animate animate-pulse my-auto" />
-
-                        <h3 className="font-semibold text-xs my-auto">Functional</h3>
-                    </Badge>
                 
-            )}
-
                 {client.device && (
                     <Link to={`/devices/${client.device.id}`}>
                         <h3 className="font-semibold mb-2">Device</h3>
@@ -103,10 +102,10 @@ export default function Client() {
                 </div>
 
                 <div>
-                    <h3 className="font-semibold mb-2">Used Aliases</h3>
+                    <h3 className="font-semibold mb-2">Connected Services</h3>
                     <div className="grid gap-2">
                         {client.usedAliases?.map(usedAlias => (
-                            <div key={usedAlias.id} className="p-2 border rounded-md">
+                            <div key={usedAlias.id} className={cn("p-2 border rounded-md", usedAlias.valid ? "border-green-500/40" : "border-red-500/40")}>
                                 <div className="font-medium">{usedAlias.key}</div>
                                 {usedAlias.alias && (
                                     <Link to={`/instance-aliases/${usedAlias.alias.id}`}>
@@ -119,7 +118,7 @@ export default function Client() {
                                     </Link>
                                 )}
                                 <div className="text-xs text-muted-foreground">
-                                    {usedAlias.valid ? 'Valid' : 'Invalid'}
+                                    {usedAlias.reason}
                                 </div>
                             </div>
                         ))}

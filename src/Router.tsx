@@ -84,6 +84,8 @@ import SocialAccount from './socialaccount/SocialAccount'
 import Sessions from './usersessions/Sessions'
 import Role from './roles/Role'
 import Roles from './roles/Roles'
+import Layer from './layers/Layer'
+import Layers from './layers/Layers'
 import Scope from './scopes/Scope'
 import Scopes from './scopes/Scopes'
 import Callback from './Callback'
@@ -385,6 +387,14 @@ function createRouter () {
             {
               path: 'roles/:id',
               element: <AuthenticatedRoute><Role /></AuthenticatedRoute>
+            },
+            {
+              path: 'layers',
+              element: <AuthenticatedRoute><Layers /></AuthenticatedRoute>
+            },
+            {
+              path: 'layers/:id',
+              element: <AuthenticatedRoute><Layer /></AuthenticatedRoute>
             },
           ]
         },
